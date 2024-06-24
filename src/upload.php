@@ -1,12 +1,20 @@
 <?php
-require 'vendor/autoload.php';
+require 'load_env.php'; // Include your custom environment loader
+
+// Load the environment variables
+try {
+    loadEnv(__DIR__ . '/.env');
+} catch (Exception $e) {
+    echo "Error loading .env file: " . $e->getMessage();
+    exit;
+}
 
 // Function to call OpenAI API using cURL
 function callOpenAI($certificateContent, $standardContents, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
     
     // Prepare prompt with certificate and all standards
-    $prompt = "You are a Steel certificate compliance checker. Analyze the following steel certificate and compare it with the NZ standards provided. If the certificate is compliant, return 'Compliant', otherwise return 'Not Compliant' and explain why. Provide details of the comparison with each standard.\n\nCertificate Content (base64 encoded):\n$certificateContent\n\nNZ Standards (base64 encoded):\n";
+    $prompt = "You are a Steel certificate compliance checker. Analyze the following steel certificate and compare it with the NZ standards provided. If the certificate is compliant, return 'Compliant', otherwise return 'Not Compliant' and explain why. Provide details of the comparison with each standard.\n\nCertificate Content:\n$certificateContent\n\nNZ Standards:\n";
     foreach ($standardContents as $standardName => $standardContent) {
         $prompt .= "Standard: $standardName\n$standardContent\n\n";
     }
@@ -17,7 +25,7 @@ function callOpenAI($certificateContent, $standardContents, $apiKey) {
             ['role' => 'system', 'content' => 'You are a Steel certificate compliance checker.'],
             ['role' => 'user', 'content' => $prompt],
         ],
-        'max_tokens' => 2000,
+        'max_tokens' => 3000,
     ];
     
     $headers = [
@@ -41,52 +49,55 @@ function callOpenAI($certificateContent, $standardContents, $apiKey) {
     return $response_data['choices'][0]['message']['content'];
 }
 
-// Function to fetch NZ standards from the database
-function getNZStandards($pdo) {
-    $stmt = $pdo->query("SELECT standard_name, standard_file_path FROM nz_standards"); // Fetch all standards with file paths
-    $standards = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        // Read each standard PDF as binary
-        $standardContent = file_get_contents($row['standard_file_path']);
-        if ($standardContent) {
-            $standards[$row['standard_name']] = base64_encode($standardContent);
+// Function to extract text from PDF using pdftotext
+function extractTextFromPDF($pdfPath) {
+    $outputFile = tempnam(sys_get_temp_dir(), 'pdftotext');
+    shell_exec("pdftotext -q -nopgbrk -enc UTF-8 '$pdfPath' '$outputFile'");
+    $text = file_get_contents($outputFile);
+    unlink($outputFile);
+    return $text;
+}
+
+// Function to read and extract text from all standard PDFs in a directory
+function extractTextFromStandards($directory) {
+    $standardTexts = [];
+    $files = glob("$directory/*.pdf");
+
+    foreach ($files as $file) {
+        $text = extractTextFromPDF($file);
+        if ($text) {
+            $standardTexts[basename($file)] = $text;
         }
     }
-    return $standards;
+    return $standardTexts;
 }
 
 // Handle file upload and OpenAI API call
 if ($_FILES['pdfFile']['error'] == UPLOAD_ERR_OK) {
     $pdfPath = $_FILES['pdfFile']['tmp_name'];
-    $pdfContent = file_get_contents($pdfPath);
+    $pdfContent = extractTextFromPDF($pdfPath);
 
-    // Check if content was read successfully
+    // Check if content was extracted successfully
     if (!$pdfContent) {
-        echo "Failed to read the certificate PDF.";
+        echo "Failed to extract text from the certificate PDF.";
         exit;
     }
 
-    // Get the standard texts from the database
-    $pdo = new PDO('mysql:host=localhost;dbname=your_db', 'username', 'password'); // Update with your database credentials
-    if (!$pdo) {
-        echo "Failed to connect to the database.";
-        exit;
-    }
-
-    $standardContents = getNZStandards($pdo);
+    // Extract text from all standard PDFs in the NzStandards directory
+    $standardContents = extractTextFromStandards('NzStandards');
     if (empty($standardContents)) {
-        echo "Failed to fetch the standard PDFs.";
+        echo "Failed to extract text from the standard PDFs.";
         exit;
     }
 
-    // Call OpenAI to analyze the certificate and compare with standards
-    $apiKey = getenv('OPENAI_API_KEY'); // Use environment variable for API key
+    // Retrieve API key directly from environment variables
+    $apiKey = getenv('OPENAI_API_KEY');
     if (!$apiKey) {
         echo "API key is not set.";
         exit;
     }
 
-    $result = callOpenAI(base64_encode($pdfContent), $standardContents, $apiKey);
+    $result = callOpenAI($pdfContent, $standardContents, $apiKey);
 
     // Output the result
     echo "<h2>Compliance Check Result</h2>";
