@@ -20,16 +20,31 @@ body {
     box-sizing: border-box;
 }
 
+.main-title {
+    font-size: 40px; /* Larger font size for the main title */
+    color: #545b62; /* Dark grey color */
+    margin-bottom: 20px; /* Space below the main title */
+}
+
 .logo {
     flex: 2;
-    max-width: 80%;
+    max-width: 70%;
     height: auto;
     align-self: center;
+    margin-bottom: 10px; /* Add space below the logo */
+}
+
+.description {
+    flex: 1;
+    font-size: 30px;
+    color: #a9a9a9; /* Dark grey color */
+    margin-bottom: 40px; /* Space between the description and the button */
+    line-height: 1.5;
 }
 
 .upload-btn {
     flex: 1;
-    background-color: #4a4a4a; /* Dark grey color */
+    background-color: #545b62; /* Dark grey color */
     color: white;
     padding: 30px 50px;
     border: none;
@@ -37,7 +52,6 @@ body {
     font-size: 28px;
     cursor: pointer;
     align-self: center;
-    margin-top: 5%; /* Add margin-top to create space between logo and button */
 }
 
 .upload-btn:hover {
