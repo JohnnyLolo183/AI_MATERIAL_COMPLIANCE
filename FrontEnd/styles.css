@@ -25,7 +25,6 @@ body {
     max-width: 80%;
     height: auto;
     align-self: center;
-    margin-top: 5%;
 }
 
 .upload-btn {
@@ -39,7 +38,6 @@ body {
     cursor: pointer;
     align-self: center;
     margin-top: 5%; /* Add margin-top to create space between logo and button */
-    margin-bottom: 5%; /* Pushes the button to the bottom of its container */
 }
 
 .upload-btn:hover {
