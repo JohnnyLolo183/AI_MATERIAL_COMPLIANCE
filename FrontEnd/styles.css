@@ -33,7 +33,7 @@ body.home-page {
 }
 
 .logo {
-    max-width: 70%;
+    max-width: 50%;
     height: auto;
     align-self: center;
     margin-bottom: 10px; /* Add space below the logo */
