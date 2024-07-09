@@ -18,3 +18,40 @@ Make sure to specify the same CHANNEL_ID in the command.
 
 
 //----------------------------------------------------------------------------------------------
+
+//---------------------Uese emulators-----------------------------------------------------------
+// install firebase tools
+npm install -g firebase-tools
+
+// start hosing emulator
+firebase emulators:start --only hosting
+
+// open a local URL
+i  hosting: Serving hosting files from: public
+✔  hosting: Local server: http://localhost:5000
+
+NOTE:
+You can make changes to your code and simply
+ refresh the browser to see the updates. The
+  emulator will serve the latest version of 
+  your files.
+
+ // Example Commands
+  # Install Firebase CLI
+npm install -g firebase-tools
+
+# Initialize Firebase in your project (if not already done)
+firebase init
+
+# Start the Firebase Hosting emulator
+firebase emulators:start --only hosting
+
+//----------------------------------------------------------------------------------------------
+
+//---------------------To Use all emulators-----------------------------------------------------
+firebase emulators:start
+//----------------------------------------------------------------------------------------------
+
+//---------------------configure the emulators--------------------------------------------------
+you can config the emulators "in firebase.json"
+//----------------------------------------------------------------------------------------------
