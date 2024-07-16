@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "AI_MATERIAL_COMPLIANCE",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -21,23 +21,27 @@
       "port": 8085
     },
     "ui": {
-      "enabled": true
+      "enabled": true,
+      "port": 4000
     },
-    "singleProjectMode": true,
     "auth": {
       "port": 9099
     },
+    "singleProjectMode": false,
     "functions": {
       "port": 5001
     },
     "firestore": {
-      "port": 8080
+      "port": 8080,
+      "rules": "firestore.rules"
     },
     "database": {
-      "port": 9000
+      "port": 9000,
+      "rules": "database.rules.json"
     },
     "storage": {
-      "port": 9199
+      "port": 9199,
+      "rules": "storage.rules"
     },
     "eventarc": {
       "port": 9299
