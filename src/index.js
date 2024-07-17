@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function() {
     const uploadForm = document.getElementById("pdfUploadForm");
     const fileInput = document.getElementById("pdfFile");
-    const resultDiv = document.getElementById("result");
+    const resultDiv = document.geElementById("result");
 
     uploadForm.addEventListener("submit", async function(event) {
         event.preventDefault();

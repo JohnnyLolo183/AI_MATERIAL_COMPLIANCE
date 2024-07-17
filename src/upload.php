@@ -46,7 +46,7 @@ function callOpenAI($certificateContent, $standardContents, $apiKey) {
     curl_close($ch);
 
     $response_data = json_decode($response, true);
-    return $response_data['choices'][0]['message']['content'];
+    return $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API';
 }
 
 // Function to extract text from PDF using pdftotext
@@ -74,6 +74,15 @@ function extractTextFromStandards($directory) {
 
 // Handle file upload and OpenAI API call
 if ($_FILES['pdfFile']['error'] == UPLOAD_ERR_OK) {
+    $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($fileInfo, $_FILES['pdfFile']['tmp_name']);
+    finfo_close($fileInfo);
+
+    if ($mimeType !== 'application/pdf') {
+        echo "Uploaded file is not a PDF.";
+        exit;
+    }
+
     $pdfPath = $_FILES['pdfFile']['tmp_name'];
     $pdfContent = extractTextFromPDF($pdfPath);
 
@@ -103,6 +112,6 @@ if ($_FILES['pdfFile']['error'] == UPLOAD_ERR_OK) {
     echo "<h2>Compliance Check Result</h2>";
     echo "<p>$result</p>";
 } else {
-    echo "File upload failed!";
+    echo "File upload failed with error code: " . $_FILES['pdfFile']['error'];
 }
 ?>
