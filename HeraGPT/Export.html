@@ -5,10 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Export</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .pdf-viewer-container {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
 </head>
 <body class="new-page">
     <div class="container">
         <div class="left-side">
+            <img src="images/HERA2.png" alt="HERA Logo" class="logo-left">
             <div class="button-container">
                 <button class="action-btn">Export</button>
             </div>
@@ -43,99 +57,34 @@
                         <label for="material-description">Description</label>
                         <input type="text" id="material-description" name="material-description">
                     </div>
-                    <div class="value-item">
-                        <label>Chemical analysis</label>
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Element</th>
-                                        <th>%</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Carbon (C)</td>
-                                        <td><input type="text" name="carbon"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Manganese (Mn)</td>
-                                        <td><input type="text" name="manganese"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Chromium (Cr)</td>
-                                        <td><input type="text" name="chromium"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Molybdenum (Mo)</td>
-                                        <td><input type="text" name="molybdenum"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Vanadium (V)</td>
-                                        <td><input type="text" name="vanadium"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Nickel (Ni)</td>
-                                        <td><input type="text" name="nickel"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Copper (Cu)</td>
-                                        <td><input type="text" name="copper"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="value-item">
-                        <label>Mechanical analysis</label>
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Property</th>
-                                        <th>Unit</th>
-                                        <th>Result</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Yield strength</td>
-                                        <td><input type="text" name="yield-strength-unit"></td>
-                                        <td><input type="text" name="yield-strength-result"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Ultimate tensile</td>
-                                        <td><input type="text" name="ultimate-tensile-unit"></td>
-                                        <td><input type="text" name="ultimate-tensile-result"></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Elongation</td>
-                                        <td><input type="text" name="elongation-unit"></td>
-                                        <td><input type="text" name="elongation-result"></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="value-item">
-                        <label for="comments">Comments</label>
-                        <textarea id="comments" name="comments"></textarea>
-                    </div>
-                    <div class="value-item">
-                        <button class="ok-btn">OK</button>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const pdfUrl = urlParams.get('pdf');
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
                 console.log("PDF URL set to:", pdfUrl); // Debugging line
+
+                // Extract text from the PDF using a backend service
+                try {
+                    const response = await fetch('extractData.php?pdf=' + encodeURIComponent(pdfUrl));
+                    const data = await response.json();
+
+                    // Populate the text fields with extracted data
+                    if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
+                    if (data.certificate_number) document.getElementById('certificate-number').value = data.certificate_number;
+                    if (data.heat_number) document.getElementById('heat-number').value = data.heat_number;
+                    if (data.material_standard) document.getElementById('material-standard').value = data.material_standard;
+                    if (data.material_grade) document.getElementById('material-grade').value = data.material_grade;
+                    if (data.material_description) document.getElementById('material-description').value = data.material_description;
+                } catch (error) {
+                    console.error('Error extracting data:', error);
+                }
             } else {
                 console.error("No PDF URL found in query parameters"); // Debugging line
             }
