@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         loadEnv(__DIR__ . '/.env');
     } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(["error" => "Error loading .env file: " . $e->getMessage()]);
+        echo "Error loading .env file: " . $e->getMessage();
         exit;
     }
 
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $response = curl_exec($ch);
         if (curl_errno($ch)) {
             http_response_code(500);
-            echo json_encode(["error" => 'Curl error: ' . curl_error($ch)]);
+            echo "Curl error: " . curl_error($ch);
             exit;
         }
         curl_close($ch);
@@ -77,51 +77,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Handle file upload and OpenAI API call
     if ($_FILES['pdfFile']['error'] == UPLOAD_ERR_OK) {
-        $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($fileInfo, $_FILES['pdfFile']['tmp_name']);
-        finfo_close($fileInfo);
+        $uploadDir = 'uploads/';
+        $uploadFile = $uploadDir . basename($_FILES['pdfFile']['name']);
 
-        if ($mimeType !== 'application/pdf') {
-            http_response_code(400);
-            echo json_encode(["error" => "Uploaded file is not a PDF."]);
-            exit;
+        // Ensure the uploads directory exists
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
         }
 
-        $pdfPath = $_FILES['pdfFile']['tmp_name'];
-        $pdfContent = extractTextFromPDF($pdfPath);
+        if (move_uploaded_file($_FILES['pdfFile']['tmp_name'], $uploadFile)) {
+            $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mimeType = finfo_file($fileInfo, $uploadFile);
+            finfo_close($fileInfo);
 
-        // Check if content was extracted successfully
-        if (!$pdfContent) {
+            if ($mimeType !== 'application/pdf') {
+                http_response_code(400);
+                echo "Uploaded file is not a PDF.";
+                exit;
+            }
+
+            $pdfPath = $uploadFile;
+            $pdfContent = extractTextFromPDF($pdfPath);
+
+            // Check if content was extracted successfully
+            if (!$pdfContent) {
+                http_response_code(500);
+                echo "Failed to extract text from the certificate PDF.";
+                exit;
+            }
+
+            // Extract text from all standard PDFs in the NzStandards directory
+            $standardContents = extractTextFromStandards('NzStandards');
+            if (empty($standardContents)) {
+                http_response_code(500);
+                echo "Failed to extract text from the standard PDFs.";
+                exit;
+            }
+
+            // Retrieve API key directly from environment variables
+            $apiKey = getenv('OPENAI_API_KEY');
+            if (!$apiKey) {
+                http_response_code(500);
+                echo "API key is not set.";
+                exit;
+            }
+
+            $result = callOpenAI($pdfContent, $standardContents, $apiKey);
+
+            // Redirect to DataExtract.html with the PDF URL as a query parameter
+            header('Location: DataExtract.html?pdf=' . urlencode($uploadFile));
+            exit;
+        } else {
             http_response_code(500);
-            echo json_encode(["error" => "Failed to extract text from the certificate PDF."]);
-            exit;
+            echo "Failed to move uploaded file.";
         }
-
-        // Extract text from all standard PDFs in the NzStandards directory
-        $standardContents = extractTextFromStandards('NzStandards');
-        if (empty($standardContents)) {
-            http_response_code(500);
-            echo json_encode(["error" => "Failed to extract text from the standard PDFs."]);
-            exit;
-        }
-
-        // Retrieve API key directly from environment variables
-        $apiKey = getenv('OPENAI_API_KEY');
-        if (!$apiKey) {
-            http_response_code(500);
-            echo json_encode(["error" => "API key is not set."]);
-            exit;
-        }
-
-        $result = callOpenAI($pdfContent, $standardContents, $apiKey);
-
-        // Output the result
-        echo json_encode(["result" => $result]);
     } else {
         http_response_code(400);
-        echo json_encode(["error" => "File upload failed with error code: " . $_FILES['pdfFile']['error']]);
+        echo "File upload failed with error code: " . $_FILES['pdfFile']['error'];
     }
 } else {
     http_response_code(405);
-    echo json_encode(["error" => "Method not allowed"]);
+    echo "Method not allowed";
 }
+?>
