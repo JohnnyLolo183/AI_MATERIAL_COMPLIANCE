@@ -7,60 +7,6 @@ body {
     height: 100vh; /* Ensure the body takes the full height of the viewport */
 }
 
-/* Home Page Styles */
-body.home-page {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.home-page .container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    text-align: center;
-    padding: 10px;
-    box-sizing: border-box;
-}
-
-.main-title {
-    font-size: 40px; /* Larger font size for the main title */
-    color: #545b62; /* Dark grey color */
-    margin-bottom: 20px; /* Space below the main title */
-}
-
-.logo {
-    max-width: 50%;
-    height: auto;
-    align-self: center;
-    margin-bottom: 10px; /* Add space below the logo */
-}
-
-.description {
-    font-size: 30px;
-    color: #a9a9a9; /* Dark grey color */
-    margin-bottom: 40px; /* Space between the description and the button */
-    line-height: 1.5;
-}
-
-.upload-btn {
-    background-color: #545b62; /* Dark grey color */
-    color: white;
-    padding: 30px 50px;
-    border: none;
-    border-radius: 5px;
-    font-size: 28px;
-    cursor: pointer;
-    align-self: center;
-}
-
-.upload-btn:hover {
-    background-color: #3a3a3a; /* Slightly darker grey for hover effect */
-}
-
 /* New Pages Styles */
 body.new-page {
     display: flex;
@@ -134,4 +80,73 @@ body.new-page {
     height: 100%;
     border: 2px solid #a9a9a9;
     box-sizing: border-box;
+    position: relative;
+    display: flex;
+}
+
+.pdf-viewer-container {
+    width: 100%; /* Adjust as needed */
+    height: 100%;
+}
+
+.pdf-viewer {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.value-section {
+    width: 40%; /* Adjust as needed */
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow-y: auto; /* Add vertical scroll if content exceeds container */
+}
+
+.value-item {
+    margin-bottom: 10px;
+}
+
+.value-item label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.value-item input, 
+.value-item textarea {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.table-container {
+    margin-top: 10px;
+    overflow-x: auto; /* Add horizontal scroll for table if needed */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+}
+
+.ok-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.ok-btn:hover {
+    background-color: #218838;
 }

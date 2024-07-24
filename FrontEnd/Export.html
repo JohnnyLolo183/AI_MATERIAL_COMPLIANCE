@@ -15,7 +15,122 @@
             </div>
         </div>
         <div class="right-side">
-            <div class="certificate-outline"></div>
+            <div class="certificate-outline">
+            <div class="pdf-viewer-container">
+                <iframe src="/FrontEnd/images/030065 (1).pdf" frameborder="0" class="pdf-viewer"></iframe>
+            </div>
+            <div class="value-section">
+                <div class="value-item">
+                    <label for="manufacturer">Manufacturer</label>
+                    <input type="text" id="manufacturer" name="manufacturer">
+                </div>
+                <div class="value-item">
+                    <label for="certificate-number">Certificate number</label>
+                    <input type="text" id="certificate-number" name="certificate-number">
+                </div>
+                <div class="value-item">
+                    <label for="heat-number">Materials (Heat number)</label>
+                    <textarea id="heat-number" name="heat-number"></textarea>
+                </div>
+                <div class="value-item">
+                    <label for="material-standard">Material Standard</label>
+                    <input type="text" id="material-standard" name="material-standard">
+                </div>
+                <div class="value-item">
+                    <label for="material-grade">Material Grade</label>
+                    <input type="text" id="material-grade" name="material-grade">
+                </div>
+                <div class="value-item">
+                    <label for="material-description">Description</label>
+                    <input type="text" id="material-description" name="material-description">
+                </div>
+                <div class="value-item">
+                    <label>Chemical analysis</label>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Element</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Carbon (C)</td>
+                                    <td><input type="text" name="carbon"></td>
+                                </tr>
+                                <tr>
+                                    <td>Manganese (Mn)</td>
+                                    <td><input type="text" name="manganese"></td>
+                                </tr>
+                                <tr>
+                                    <td>Chromium (Cr)</td>
+                                    <td><input type="text" name="chromium"></td>
+                                </tr>
+                                <tr>
+                                    <td>Molybdenum (Mo)</td>
+                                    <td><input type="text" name="molybdenum"></td>
+                                </tr>
+                                <tr>
+                                    <td>Vanadium (V)</td>
+                                    <td><input type="text" name="vanadium"></td>
+                                </tr>
+                                <tr>
+                                    <td>Nickel (Ni)</td>
+                                    <td><input type="text" name="nickel"></td>
+                                </tr>
+                                <tr>
+                                    <td>Copper (Cu)</td>
+                                    <td><input type="text" name="copper"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="value-item">
+                    <label>Mechanical analysis</label>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Unit</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Yield strength</td>
+                                    <td><input type="text" name="yield-strength-unit"></td>
+                                    <td><input type="text" name="yield-strength-result"></td>
+                                </tr>
+                                <tr>
+                                    <td>Ultimate tensile</td>
+                                    <td><input type="text" name="ultimate-tensile-unit"></td>
+                                    <td><input type="text" name="ultimate-tensile-result"></td>
+                                </tr>
+                                <tr>
+                                    <td>Elongation</td>
+                                    <td><input type="text" name="elongation-unit"></td>
+                                    <td><input type="text" name="elongation-result"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="value-item">
+                    <label for="comments">Comments</label>
+                    <textarea id="comments" name="comments"></textarea>
+                </div>
+                <div class="value-item">
+                    <button class="ok-btn">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
         </div>
     </div>
 </body>
