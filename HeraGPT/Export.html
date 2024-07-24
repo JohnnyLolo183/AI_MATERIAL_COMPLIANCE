@@ -22,9 +22,8 @@
 <body class="new-page">
     <div class="container">
         <div class="left-side">
-            <img src="images/HERA2.png" alt="HERA Logo" class="logo-left">
             <div class="button-container">
-                <button class="action-btn">Export</button>
+                <button id="exportBtn" class="action-btn">Export</button>
             </div>
         </div>
         <div class="right-side">
@@ -62,31 +61,29 @@
         </div>
     </div>
     <script>
-        document.addEventListener("DOMContentLoaded", async function() {
+        document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
             const pdfUrl = urlParams.get('pdf');
+            const result = urlParams.get('result');
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
                 console.log("PDF URL set to:", pdfUrl); // Debugging line
-
-                // Extract text from the PDF using a backend service
-                try {
-                    const response = await fetch('extractData.php?pdf=' + encodeURIComponent(pdfUrl));
-                    const data = await response.json();
-
-                    // Populate the text fields with extracted data
-                    if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
-                    if (data.certificate_number) document.getElementById('certificate-number').value = data.certificate_number;
-                    if (data.heat_number) document.getElementById('heat-number').value = data.heat_number;
-                    if (data.material_standard) document.getElementById('material-standard').value = data.material_standard;
-                    if (data.material_grade) document.getElementById('material-grade').value = data.material_grade;
-                    if (data.material_description) document.getElementById('material-description').value = data.material_description;
-                } catch (error) {
-                    console.error('Error extracting data:', error);
-                }
             } else {
                 console.error("No PDF URL found in query parameters"); // Debugging line
+            }
+
+            if (result) {
+                const data = JSON.parse(result);
+                // Populate the text fields with extracted data
+                if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
+                if (data.certificate_number) document.getElementById('certificate-number').value = data.certificate_number;
+                if (data.heat_number) document.getElementById('heat-number').value = data.heat_number;
+                if (data.material_standard) document.getElementById('material-standard').value = data.material_standard;
+                if (data.material_grade) document.getElementById('material-grade').value = data.material_grade;
+                if (data.material_description) document.getElementById('material-description').value = data.material_description;
+            } else {
+                console.error("No result found in query parameters"); // Debugging line
             }
         });
     </script>
