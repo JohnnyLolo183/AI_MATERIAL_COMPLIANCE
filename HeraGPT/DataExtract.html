@@ -49,7 +49,7 @@
 
             const beginExtractionBtn = document.getElementById("beginExtractionBtn");
             beginExtractionBtn.addEventListener("click", function() {
-                window.location.href = "Export.html";
+                window.location.href = "Export.html?pdf=" + encodeURIComponent(pdfUrl);
             });
         });
     </script>
