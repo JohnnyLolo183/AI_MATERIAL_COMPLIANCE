@@ -1,0 +1,46 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f4f4f4;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.logo {
+    flex: 2;
+    max-width: 80%;
+    height: auto;
+    align-self: center;
+    margin-top: 5%;
+}
+
+.upload-btn {
+    flex: 1;
+    background-color: #4a4a4a; /* Dark grey color */
+    color: white;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    align-self: center;
+    margin-bottom: 10%; /* Pushes the button to the bottom of its container */
+}
+
+.upload-btn:hover {
+    background-color: #3a3a3a; /* Slightly darker grey for hover effect */
+}

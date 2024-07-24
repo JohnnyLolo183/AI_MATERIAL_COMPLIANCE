@@ -1,0 +1,152 @@
+/* Common Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+    overflow: hidden; /* Prevent scrolling */
+    height: 100vh; /* Ensure the body takes the full height of the viewport */
+}
+
+/* New Pages Styles */
+body.new-page {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.new-page .container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.left-side {
+    width: 33.33%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between; /* Align items to the top and bottom */
+    padding: 20px;
+    box-sizing: border-box;
+    height: 100%;
+    position: relative; /* For absolute positioning of elements */
+}
+
+.logo-left {
+    max-width: 60%;
+    height: auto;
+    position: absolute;
+    top: 20px; /* Space from the top */
+}
+
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: absolute;
+    bottom: 20px; /* Space from the bottom */
+}
+
+.action-btn, .home-btn {
+    background-color: #545b62;
+    color: white;
+    padding: 20px 40px;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+
+.action-btn:hover, .home-btn:hover {
+    background-color: #3a3a3a;
+}
+
+.right-side {
+    width: 66.67%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.certificate-outline {
+    width: 100%;
+    height: 100%;
+    border: 2px solid #a9a9a9;
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+}
+
+.pdf-viewer-container {
+    width: 100%; /* Adjust as needed */
+    height: 100%;
+}
+
+.pdf-viewer {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.value-section {
+    width: 40%; /* Adjust as needed */
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow-y: auto; /* Add vertical scroll if content exceeds container */
+}
+
+.value-item {
+    margin-bottom: 10px;
+}
+
+.value-item label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.value-item input, 
+.value-item textarea {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.table-container {
+    margin-top: 10px;
+    overflow-x: auto; /* Add horizontal scroll for table if needed */
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 5px;
+    text-align: left;
+}
+
+.ok-btn {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.ok-btn:hover {
+    background-color: #218838;
+}
