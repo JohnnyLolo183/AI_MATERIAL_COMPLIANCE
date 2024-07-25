@@ -1,5 +1,5 @@
 <?php
-require 'vendor/autoload.php';
+require '../vendor/autoload.php';
 
 use setasign\Fpdi\Fpdi;
 
@@ -11,7 +11,7 @@ function stampPDF($filePath, $stampType) {
     $pdf = new PdfWithStamp();
     $pageCount = $pdf->setSourceFile($filePath);
 
-    $stampImagePath = ($stampType == 'compliant') ? 'images/compliant.png' : 'images/noncompliant.png';
+    $stampImagePath = ($stampType == 'compliant') ? '../images/compliant.png' : '../images/noncompliant.png';
 
     if (!file_exists($stampImagePath) || mime_content_type($stampImagePath) !== 'image/png') {
         throw new Exception('Invalid PNG file: ' . $stampImagePath);

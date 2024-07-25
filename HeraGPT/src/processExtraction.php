@@ -58,16 +58,7 @@ function callOpenAI($certificateContent, $apiKey) {
     // Extracting the required fields from the response (assuming the response format)
     $extractedData = [
         'response' => $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API',
-        'manufacturer' => '', // Extract from the response
-        'certificate_number' => '', // Extract from the response
-        'heat_number' => '', // Extract from the response
-        'material_standard' => '', // Extract from the response
-        'material_grade' => '', // Extract from the response
-        'material_description' => '', // Extract from the response
     ];
-
-    // Assuming the response content contains relevant data, populate these fields
-    // This should be modified based on the actual response format from OpenAI
 
     return json_encode($extractedData);
 }
