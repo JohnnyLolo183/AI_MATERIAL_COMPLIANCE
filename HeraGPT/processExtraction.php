@@ -110,8 +110,8 @@ if (isset($_GET['pdf'])) {
 
     $result = callOpenAI($pdfContent, $standardContents, $apiKey);
 
-    // Redirect to Export.html with the result as a query parameter
-    header('Location: Export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
+    // Redirect to export.html with the result as a query parameter
+    header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
     exit;
 } else {
     echo "No PDF provided.";

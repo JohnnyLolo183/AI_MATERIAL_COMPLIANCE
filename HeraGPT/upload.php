@@ -29,8 +29,8 @@ if ($_FILES['pdfFile']['error'] == UPLOAD_ERR_OK) {
             exit;
         }
 
-        // Redirect to DataExtract.html with the PDF URL as a query parameter
-        header('Location: DataExtract.html?pdf=' . urlencode($uploadFile));
+        // Redirect to extract.html with the PDF URL as a query parameter
+        header('Location: extract.html?pdf=' . urlencode($uploadFile));
         exit;
     } else {
         echo "Failed to move uploaded file.";
