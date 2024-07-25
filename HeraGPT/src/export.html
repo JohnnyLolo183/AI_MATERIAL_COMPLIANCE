@@ -19,23 +19,17 @@
         }
 
         .results-container {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
+            margin-top: 5px;
+            padding: 20px;
+            width: 50%;
+            background-color: #f4f4f4;
             white-space: pre-wrap; /* Ensure text wraps within the container */
-            overflow: auto; /* Add scrollbars if the content overflows */
+            max-height: auto; /* Adjust this value as needed */
+            overflow-y: auto; /* Add vertical scroll if content overflows */
         }
 
-        .results-container h3 {
-            margin-top: 0;
-        }
-
-        .display-box {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #fff;
+        .results-container pre {
+            white-space: normal; /* Ensure text wraps within the container */
         }
 
         /* Specific styles for export.html */
@@ -104,6 +98,7 @@
             width: 50%;
             text-align: center;
             opacity: 0.8;
+            border-radius: 5px;
         }
 
         .status-btn.active {
@@ -137,7 +132,7 @@
                     <iframe id="pdfViewer" class="pdf-viewer" src="" frameborder="0"></iframe>
                 </div>
                 <div class="results-container" id="resultsContainer">
-                    <h3>OpenAI Results</h3>
+                    <h3>Results</h3>
                     <pre id="openaiResults"></pre>
                 </div>
             </div>
@@ -160,8 +155,9 @@
             if (result) {
                 const data = JSON.parse(result);
 
-                // Display the full result from OpenAI
-                document.getElementById('openaiResults').textContent = data.response;
+                // Format the result from OpenAI for better readability
+                const formattedResult = data.response.replace(/(Compliant|Non-Compliant)/g, '\n$1\n\n');
+                document.getElementById('openaiResults').innerHTML = formattedResult.replace(/\n/g, '<br>');
             } else {
                 console.error("No result found in query parameters"); // Debugging line
             }

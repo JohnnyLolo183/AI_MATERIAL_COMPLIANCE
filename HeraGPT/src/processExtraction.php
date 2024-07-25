@@ -14,7 +14,7 @@ function callOpenAI($certificateContent, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
     
     // Prepare a prompt with certificate content and ask the AI to provide a concise compliance check
-    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steel certificate, identify the NZ standard mentioned, search for it online, and compare the certificate content with the standard. If the certificate is compliant, return 'Compliant', otherwise return 'Not Compliant' and provide a brief summary of the non-compliance.\n\nCertificate Content:\n$certificateContent";
+    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steel certificate, identify the NZ standard mentioned, search for it online, and compare the certificate content with the standard. If the certificate is compliant, return 'Compliant' and 'This certificate complies with (standard name)' only. If non-compliant, return 'Non-Compliant' and 'This certificate fails to comply with (standard name). (Specify which part it fails and show comparison).' only. Also list where you got the standard from online and tell me if you were able to access it to view its information. \n\nCertificate Content:\n$certificateContent";
 
     $data = [
         'model' => 'gpt-4o-mini',

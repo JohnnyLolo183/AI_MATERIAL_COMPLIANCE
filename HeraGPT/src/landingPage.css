@@ -22,10 +22,11 @@ body {
 
 .logo {
     flex: 2;
-    max-width: 80%;
+    max-width: 50%;
     height: auto;
     align-self: center;
     margin-top: 5%;
+    padding-bottom: 40px;
 }
 
 .upload-btn {
