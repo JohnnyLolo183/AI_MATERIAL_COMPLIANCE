@@ -23,17 +23,111 @@
             padding: 10px;
             border: 1px solid #ccc;
             background-color: #f9f9f9;
+            white-space: pre-wrap; /* Ensure text wraps within the container */
+            overflow: auto; /* Add scrollbars if the content overflows */
         }
 
         .results-container h3 {
             margin-top: 0;
+        }
+
+        .display-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        /* Specific styles for export.html */
+        .left-side {
+            width: 20%; /* Reduced width */
+            padding: 20px;
+            box-sizing: border-box;
+            height: 100%;
+            position: relative; /* For absolute positioning of elements */
+        }
+
+        .right-side {
+            width: 80%; /* Increased width */
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 20px;
+            box-sizing: border-box;
+            height: 100%;
+            flex-wrap: wrap; /* Allows content to wrap */
+        }
+
+        .action-btn {
+            padding: 10px 20px; /* Adjusted padding to reduce space */
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center the button horizontally */
+            position: absolute;
+            bottom: 20px; /* Space from the bottom */
+            width: 100%;
+        }
+
+        .value-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto; /* Add vertical scroll if content exceeds container */
+        }
+
+        .value-item {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .value-item label {
+            width: 30%;
+        }
+
+        .value-item .display-box {
+            width: 70%;
+        }
+
+        .status-btn {
+            padding: 10px 20px;
+            margin: 10px 0;
+            border: 2px solid black;
+            background-color: white;
+            cursor: pointer;
+            width: 50%;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        .status-btn.active {
+            opacity: 1;
+        }
+
+        .status-btn.compliant.active {
+            background-color: green;
+            opacity: 0.60;
+        }
+
+        .status-btn.non-compliant.active {
+            background-color: red;
+            opacity: 0.60;
         }
     </style>
 </head>
 <body class="new-page">
     <div class="container">
         <div class="left-side">
+            <img src="images/HERA2.png" alt="HERA Logo" class="logo-left">
             <div class="button-container">
+                <button id="compliantBtn" class="status-btn compliant" data-type="compliant">Compliant</button>
+                <button id="nonCompliantBtn" class="status-btn non-compliant" data-type="noncompliant">Non-Compliant</button>
                 <button id="exportBtn" class="action-btn">Export</button>
             </div>
         </div>
@@ -41,32 +135,6 @@
             <div class="certificate-outline">
                 <div class="pdf-viewer-container">
                     <iframe id="pdfViewer" class="pdf-viewer" src="" frameborder="0"></iframe>
-                </div>
-                <div class="value-section">
-                    <div class="value-item">
-                        <label for="manufacturer">Manufacturer</label>
-                        <input type="text" id="manufacturer" name="manufacturer">
-                    </div>
-                    <div class="value-item">
-                        <label for="certificate-number">Certificate number</label>
-                        <input type="text" id="certificate-number" name="certificate-number">
-                    </div>
-                    <div class="value-item">
-                        <label for="heat-number">Materials (Heat number)</label>
-                        <textarea id="heat-number" name="heat-number"></textarea>
-                    </div>
-                    <div class="value-item">
-                        <label for="material-standard">Material Standard</label>
-                        <input type="text" id="material-standard" name="material-standard">
-                    </div>
-                    <div class="value-item">
-                        <label for="material-grade">Material Grade</label>
-                        <input type="text" id="material-grade" name="material-grade">
-                    </div>
-                    <div class="value-item">
-                        <label for="material-description">Description</label>
-                        <input type="text" id="material-description" name="material-description">
-                    </div>
                 </div>
                 <div class="results-container" id="resultsContainer">
                     <h3>OpenAI Results</h3>
@@ -80,6 +148,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const pdfUrl = urlParams.get('pdf');
             const result = urlParams.get('result');
+            let stampedFilePath = '';
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
@@ -90,19 +159,48 @@
 
             if (result) {
                 const data = JSON.parse(result);
-                // Populate the text fields with extracted data
-                if (data.manufacturer) document.getElementById('manufacturer').value = data.manufacturer;
-                if (data.certificate_number) document.getElementById('certificate-number').value = data.certificate_number;
-                if (data.heat_number) document.getElementById('heat-number').value = data.heat_number;
-                if (data.material_standard) document.getElementById('material-standard').value = data.material_standard;
-                if (data.material_grade) document.getElementById('material-grade').value = data.material_grade;
-                if (data.material_description) document.getElementById('material-description').value = data.material_description;
 
                 // Display the full result from OpenAI
-                document.getElementById('openaiResults').textContent = result;
+                document.getElementById('openaiResults').textContent = data.response;
             } else {
                 console.error("No result found in query parameters"); // Debugging line
             }
+
+            const compliantBtn = document.getElementById('compliantBtn');
+            const nonCompliantBtn = document.getElementById('nonCompliantBtn');
+            const exportBtn = document.getElementById('exportBtn');
+
+            function markStamp(type) {
+                fetch(`stamp_pdf.php?pdf=${encodeURIComponent(pdfUrl)}&type=${type}`)
+                    .then(response => response.text())
+                    .then(data => {
+                        stampedFilePath = data.trim();
+                        if (type === 'compliant') {
+                            compliantBtn.classList.add('active');
+                            nonCompliantBtn.classList.remove('active');
+                        } else {
+                            nonCompliantBtn.classList.add('active');
+                            compliantBtn.classList.remove('active');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            compliantBtn.addEventListener('click', function() {
+                markStamp('compliant');
+            });
+
+            nonCompliantBtn.addEventListener('click', function() {
+                markStamp('noncompliant');
+            });
+
+            exportBtn.addEventListener('click', function() {
+                if (stampedFilePath) {
+                    window.location.href = `download.html?file=${encodeURIComponent(stampedFilePath)}`;
+                } else {
+                    alert('Please mark the certificate as compliant or non-compliant before exporting.');
+                }
+            });
         });
     </script>
 </body>

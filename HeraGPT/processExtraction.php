@@ -10,14 +10,11 @@ try {
 }
 
 // Function to call OpenAI API using cURL
-function callOpenAI($certificateContent, $standardContents, $apiKey) {
+function callOpenAI($certificateContent, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
     
-    // Prepare prompt with certificate and all standards
-    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steel certificate and compare it with the NZ standards provided. If the certificate is compliant, return 'Compliant', otherwise return 'Not Compliant' and explain why. Provide details of the comparison.\n\nCertificate Content:\n$certificateContent\n\nNZ Standards:\n";
-    foreach ($standardContents as $standardName => $standardContent) {
-        $prompt .= "Standard: $standardName\n$standardContent\n\n";
-    }
+    // Prepare a prompt with certificate content and ask the AI to provide a concise compliance check
+    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steel certificate, identify the NZ standard mentioned, search for it online, and compare the certificate content with the standard. If the certificate is compliant, return 'Compliant', otherwise return 'Not Compliant' and provide a brief summary of the non-compliance.\n\nCertificate Content:\n$certificateContent";
 
     $data = [
         'model' => 'gpt-4o-mini',
@@ -57,7 +54,22 @@ function callOpenAI($certificateContent, $standardContents, $apiKey) {
         echo "JSON decode error: " . json_last_error_msg();
         exit;
     }
-    return $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API';
+    
+    // Extracting the required fields from the response (assuming the response format)
+    $extractedData = [
+        'response' => $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API',
+        'manufacturer' => '', // Extract from the response
+        'certificate_number' => '', // Extract from the response
+        'heat_number' => '', // Extract from the response
+        'material_standard' => '', // Extract from the response
+        'material_grade' => '', // Extract from the response
+        'material_description' => '', // Extract from the response
+    ];
+
+    // Assuming the response content contains relevant data, populate these fields
+    // This should be modified based on the actual response format from OpenAI
+
+    return json_encode($extractedData);
 }
 
 // Function to extract text from PDF using pdftotext
@@ -67,20 +79,6 @@ function extractTextFromPDF($pdfPath) {
     $text = file_get_contents($outputFile);
     unlink($outputFile);
     return $text;
-}
-
-// Function to read and extract text from all standard PDFs in a directory
-function extractTextFromStandards($directory) {
-    $standardTexts = [];
-    $files = glob("$directory/*.pdf");
-
-    foreach ($files as $file) {
-        $text = extractTextFromPDF($file);
-        if ($text) {
-            $standardTexts[basename($file)] = $text;
-        }
-    }
-    return $standardTexts;
 }
 
 // Handle OpenAI API call
@@ -94,13 +92,6 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
-    // Extract text from all standard PDFs in the NzStandards directory
-    $standardContents = extractTextFromStandards('NzStandards');
-    if (empty($standardContents)) {
-        echo "Failed to extract text from the standard PDFs.";
-        exit;
-    }
-
     // Retrieve API key directly from environment variables
     $apiKey = getenv('OPENAI_API_KEY');
     if (!$apiKey) {
@@ -108,7 +99,7 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
-    $result = callOpenAI($pdfContent, $standardContents, $apiKey);
+    $result = callOpenAI($pdfContent, $apiKey);
 
     // Redirect to export.html with the result as a query parameter
     header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));

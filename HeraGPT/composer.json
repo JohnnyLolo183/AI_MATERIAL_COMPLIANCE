@@ -1,0 +1,16 @@
+{
+    "name": "hera-gpt/material-compliance",
+    "type": "project",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "HeraGpt\\MaterialCompliance\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "setasign/fpdi": "^2.6",
+        "fpdf/fpdf": "^1.86",
+        "setasign/fpdf": "^1.8"
+    }
+}
