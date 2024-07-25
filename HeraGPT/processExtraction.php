@@ -14,7 +14,7 @@ function callOpenAI($certificateContent, $standardContents, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
     
     // Prepare prompt with certificate and all standards
-    $prompt = "You are a Steel certificate compliance checker. Analyze the following steel certificate and compare it with the NZ standards provided. If the certificate is compliant, return 'Compliant', otherwise return 'Not Compliant' and explain why. Provide details of the comparison with each standard.\n\nCertificate Content:\n$certificateContent\n\nNZ Standards:\n";
+    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steel certificate and compare it with the NZ standards provided. If the certificate is compliant, return 'Compliant', otherwise return 'Not Compliant' and explain why. Provide details of the comparison.\n\nCertificate Content:\n$certificateContent\n\nNZ Standards:\n";
     foreach ($standardContents as $standardName => $standardContent) {
         $prompt .= "Standard: $standardName\n$standardContent\n\n";
     }
