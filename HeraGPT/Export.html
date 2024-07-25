@@ -17,6 +17,17 @@
             height: 100%;
             border: none;
         }
+
+        .results-container {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+
+        .results-container h3 {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body class="new-page">
@@ -57,6 +68,10 @@
                         <input type="text" id="material-description" name="material-description">
                     </div>
                 </div>
+                <div class="results-container" id="resultsContainer">
+                    <h3>OpenAI Results</h3>
+                    <pre id="openaiResults"></pre>
+                </div>
             </div>
         </div>
     </div>
@@ -82,6 +97,9 @@
                 if (data.material_standard) document.getElementById('material-standard').value = data.material_standard;
                 if (data.material_grade) document.getElementById('material-grade').value = data.material_grade;
                 if (data.material_description) document.getElementById('material-description').value = data.material_description;
+
+                // Display the full result from OpenAI
+                document.getElementById('openaiResults').textContent = result;
             } else {
                 console.error("No result found in query parameters"); // Debugging line
             }
