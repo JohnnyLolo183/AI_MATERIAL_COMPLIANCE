@@ -18,7 +18,7 @@ function callOpenAI($certificateContent, $apiKey) {
         NZ standard mentioned, search for it online, and compare the certificate content with the standard. 
         If the certificate is compliant, return 'Compliant' and 'This certificate complies with (standard name)' only. 
         If non-compliant, return 'Non-Compliant' and 'This certificate fails to comply with (standard name). 
-        (Specify which part it fails and show comparison).' only. Also list where you got the standard from online. 
+        (Specify which part it fails and show comparison).' only. List where you got the standard from. 
         \n\nCertificate Content:\n$certificateContent";
 
     $data = [
