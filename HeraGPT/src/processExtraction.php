@@ -14,21 +14,23 @@ function callOpenAI($certificateContent, $standardContent, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
     
     // Prepare a prompt with certificate content and ask the AI to provide a concise compliance check
-    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steelSS certificate and compare the 
-        certificate content with the uploaded standard specificatoins. Double check the data values.
+    $prompt = "Analyze the uploaded steel certificates chemical analysis and mechanical testing data values. 
+        Analyze the uploaded NZ Standard and compare the specifications with the certificate data values.
+        If the certificate meets standards specifications then return compliant else non-compliant.
         If result is compliant, return 'Compliant' and 'This certificate complies with (standard name)' only. 
         If result is non-compliant, return 'Non-Compliant', 'This certificate fails to comply with (standard name)', 
-        and 'Failed values: (all failed only values compared to requirements, dont show what is compliant)'. 
+        and comparison of non-compliant data values only. 
+        Ensure extracted numbers are correct and match.
         \n\nCertificate Content:\n$certificateContent
         \n\nStandard Content:\n$standardContent";
 
     $data = [
-        'model' => 'gpt-4o-mini',
+        'model' => 'gpt-4o',
         'messages' => [
             ['role' => 'system', 'content' => 'You are a Steel certificate compliance checker.'],
             ['role' => 'user', 'content' => $prompt],
         ],
-        'max_tokens' => 3000,
+        'max_tokens' => 4000,
     ];
     
     $headers = [
@@ -131,4 +133,3 @@ if (isset($_GET['pdf'])) {
 } else {
     echo "No PDF provided.";
 }
-?>
