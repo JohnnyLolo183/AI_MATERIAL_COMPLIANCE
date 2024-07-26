@@ -10,16 +10,17 @@ try {
 }
 
 // Function to call OpenAI API using cURL
-function callOpenAI($certificateContent, $apiKey) {
+function callOpenAI($certificateContent, $standardContent, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
     
     // Prepare a prompt with certificate content and ask the AI to provide a concise compliance check
-    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steel certificate, identify the 
-        NZ standard mentioned, search for it online, and compare the certificate content with the standard. 
-        If the certificate is compliant, return 'Compliant' and 'This certificate complies with (standard name)' only. 
-        If non-compliant, return 'Non-Compliant' and 'This certificate fails to comply with (standard name). 
-        (Specify which part it fails and show comparison).' only. List where you got the standard from. 
-        \n\nCertificate Content:\n$certificateContent";
+    $prompt = "You are a Steel certificate compliance checker. Analyze the uploaded steelSS certificate and compare the 
+        certificate content with the uploaded standard specificatoins. Double check the data values.
+        If result is compliant, return 'Compliant' and 'This certificate complies with (standard name)' only. 
+        If result is non-compliant, return 'Non-Compliant', 'This certificate fails to comply with (standard name)', 
+        and 'Failed values: (all failed only values compared to requirements, dont show what is compliant)'. 
+        \n\nCertificate Content:\n$certificateContent
+        \n\nStandard Content:\n$standardContent";
 
     $data = [
         'model' => 'gpt-4o-mini',
@@ -77,6 +78,17 @@ function extractTextFromPDF($pdfPath) {
     return $text;
 }
 
+// Function to read the specific standard from the local directory
+function readStandard($standardName, $directory) {
+    $files = glob("$directory/*.pdf");
+    foreach ($files as $file) {
+        if (stripos(basename($file, '.pdf'), str_replace('/', '-', strtolower($standardName))) !== false) {
+            return extractTextFromPDF($file);
+        }
+    }
+    return null;
+}
+
 // Handle OpenAI API call
 if (isset($_GET['pdf'])) {
     $pdfPath = urldecode($_GET['pdf']);
@@ -88,6 +100,22 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
+    // Identify the mentioned standard
+    preg_match('/AS\s*\/?\s*NZS\s*\d{4}/', $pdfContent, $matches);
+    if (!isset($matches[0])) {
+        echo "No standard mentioned in the certificate.";
+        exit;
+    }
+    $standardName = $matches[0];
+
+    // Read the specific standard from the local directory
+    $standardsDirectory = __DIR__ . '/NzStandards';
+    $standardContent = readStandard($standardName, $standardsDirectory);
+    if (!$standardContent) {
+        echo "Standard not found in the local directory.";
+        exit;
+    }
+
     // Retrieve API key directly from environment variables
     $apiKey = getenv('OPENAI_API_KEY');
     if (!$apiKey) {
@@ -95,7 +123,7 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
-    $result = callOpenAI($pdfContent, $apiKey);
+    $result = callOpenAI($pdfContent, $standardContent, $apiKey);
 
     // Redirect to export.html with the result as a query parameter
     header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
