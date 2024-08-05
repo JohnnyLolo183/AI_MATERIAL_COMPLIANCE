@@ -36,10 +36,10 @@
 <body class="new-page">
     <div class="container">
         <div class="left-side">
-            <img src="../images/HERA2.png" alt="HERA Logo" class="logo-left">
+            <img src="{{ url_for('static', filename='images/HERA2.png') }}" alt="HERA Logo" class="logo-left">
             <div class="button-container">
                 <a id="downloadLink" class="action-btn">Download</a>
-                <a href="delete_uploads" class="home-btn">Home</a>
+                <a href="{{ url_for('delete_uploads') }}" class="home-btn">Home</a>
             </div>
         </div>
         <div class="right-side">
