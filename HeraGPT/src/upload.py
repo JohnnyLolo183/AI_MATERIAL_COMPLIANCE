@@ -46,7 +46,7 @@ def upload_file():
             flash('Uploaded file is not a PDF.')
             return jsonify({'error': 'Uploaded file is not a PDF.'}), 400
         
-        return redirect(url_for('extract', pdf=file_path))
+        return jsonify({'result': True, 'pdfUrl': file_path})
 
     return jsonify({'error': 'Invalid file type'}), 400
 
@@ -65,20 +65,7 @@ def process_extraction():
 
     # Your processing logic here
     # For now, just redirect to a placeholder page
-    return redirect(url_for('export', pdf=pdf_path))
-
-@app.route('/export')
-def export():
-    result_path = request.args.get('result')
-    pdf_path = request.args.get('pdf')
-
-    if not result_path or not os.path.isfile(result_path):
-        return "Result file not found", 404
-
-    with open(result_path, 'r') as f:
-        result_data = json.load(f)
-
-    return render_template('export.html', result=json.dumps(result_data, indent=4), pdf=pdf_path)
+    return f"Processing {pdf_path}..."
 
 @app.route('/delete_uploads')
 def delete_uploads():
@@ -93,7 +80,7 @@ def delete_uploads():
 
 @app.route('/static/<path:filename>')
 def send_static(filename):
-    return send_from_directory('static', filename)
+    return send_from_directory('.', filename)
 
 if __name__ == '__main__':
     app.run(debug=True)
