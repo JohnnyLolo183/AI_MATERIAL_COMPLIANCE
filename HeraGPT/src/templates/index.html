@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Certificate</title>
-    <link rel="stylesheet" href="landingPage.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/landingPage.css') }}">
 </head>
 <body class="home-page">
     <div class="container">
         <p class="main-title">AI Compliance Checker</p>
-        <img src="../images/HERA2.png" alt="HERA Logo" class="logo">
+        <img src="{{ url_for('static', filename='images/HERA2.png') }}" alt="HERA Logo" class="logo">
         <p class="description">(Extract and Compare Certificate Information to Industry Standards)</p>
-        <form id="pdfUploadForm" action="upload.php" method="post" enctype="multipart/form-data">
+        <form id="pdfUploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
             <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" required>
             <button type="submit" class="upload-btn">Upload Certificate</button>
         </form>

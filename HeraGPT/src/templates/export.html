@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Export</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/styles.css') }}">
     <style>
         .pdf-viewer-container {
             width: 100%;
@@ -32,7 +32,6 @@
             white-space: normal; /* Ensure text wraps within the container */
         }
 
-        /* Specific styles for export.html */
         .left-side {
             width: 20%; /* Reduced width */
             padding: 20px;
@@ -142,7 +141,7 @@
         document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
             const pdfUrl = urlParams.get('pdf');
-            const result = urlParams.get('result');
+            const resultUrl = urlParams.get('result');
             let stampedFilePath = '';
 
             if (pdfUrl) {
@@ -152,12 +151,14 @@
                 console.error("No PDF URL found in query parameters"); // Debugging line
             }
 
-            if (result) {
-                const data = JSON.parse(result);
-
-                // Format the result from OpenAI for better readability
-                const formattedResult = data.response.replace(/(Compliant|Non-Compliant)/g, '\n$1\n\n');
-                document.getElementById('openaiResults').innerHTML = formattedResult.replace(/\n/g, '<br>');
+            if (resultUrl) {
+                fetch(resultUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        const formattedResult = data.result.replace(/(Compliant|Non-Compliant)/g, '\n$1\n\n');
+                        document.getElementById('openaiResults').innerHTML = formattedResult.replace(/\n/g, '<br>');
+                    })
+                    .catch(error => console.error('Error:', error));
             } else {
                 console.error("No result found in query parameters"); // Debugging line
             }

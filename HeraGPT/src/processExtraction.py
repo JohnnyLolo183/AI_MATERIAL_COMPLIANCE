@@ -1,6 +1,10 @@
 import os
 import re
+import json
 from pdfminer.high_level import extract_text
+from flask import Flask, request, jsonify, redirect, url_for, render_template
+
+app = Flask(__name__)
 
 def extract_text_from_pdf(pdf_path):
     text = extract_text(pdf_path)
@@ -14,12 +18,10 @@ def read_standard(standard_name, directory):
     return None
 
 def extract_data(text):
-    # Define patterns to extract values for common elements
     elements = ['C', 'Mn', 'P', 'S', 'Si', 'Cr', 'Mo', 'Ni', 'Cu']
     data = {}
     
     for element in elements:
-        # Regular expression to find the element and its value
         match = re.search(rf'\b{element}\b\s*[:=]?\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
         if match:
             data[element] = float(match.group(1))
@@ -39,20 +41,34 @@ def compare_data(cert_data, std_data):
                 non_compliant_items.append((element, cert_value, std_value))
 
     if compliant:
-        return "Compliant: This certificate complies with the standard."
+        result = "Compliant: This certificate complies with the standard."
     else:
         result = "Non-Compliant: This certificate fails to comply with the standard."
         for item in non_compliant_items:
             result += f"\nNon-Compliant Item: {item[0]}, Certificate Value: {item[1]}, Standard Range: {item[2][0]} - {item[2][1]}"
-        return result
+    
+    return {
+        "compliant": compliant,
+        "result": result,
+        "non_compliant_items": non_compliant_items
+    }
 
-def main(pdf_path):
+@app.route('/process_extraction')
+def process_extraction():
+    pdf_path = request.args.get('pdf')
+    if not pdf_path or not os.path.isfile(pdf_path):
+        return "File not found", 404
+
+    # Extract text from the uploaded PDF
     pdf_content = extract_text_from_pdf(pdf_path)
+
+    if not pdf_content:
+        return "Failed to extract text from the certificate PDF.", 500
 
     # Identify the mentioned standard
     match = re.search(r'AS\s*/?\s*NZS\s*\d{4}', pdf_content)
     if not match:
-        return "No standard mentioned in the certificate."
+        return "No standard mentioned in the certificate.", 400
 
     standard_name = match.group(0)
 
@@ -60,25 +76,32 @@ def main(pdf_path):
     standards_directory = './NzStandards'
     standard_content = read_standard(standard_name, standards_directory)
     if not standard_content:
-        return "Standard not found in the local directory."
+        return "Standard not found in the local directory.", 404
 
+    # Extract data and compare
     cert_data = extract_data(pdf_content)
     std_data = extract_data(standard_content)
+    comparison_result = compare_data(cert_data, std_data)
 
-    result = compare_data(cert_data, std_data)
+    # Save the result to a JSON file
+    result_path = os.path.join('uploads', f"{os.path.basename(pdf_path)}_result.json")
+    with open(result_path, 'w') as f:
+        json.dump(comparison_result, f, indent=4)
 
-    return result
+    return redirect(url_for('export', result=result_path, pdf=pdf_path))
 
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) < 2:
-        print("Usage: python script.py <path_to_pdf>")
-        sys.exit(1)
+@app.route('/export')
+def export():
+    result_path = request.args.get('result')
+    pdf_path = request.args.get('pdf')
 
-    pdf_path = sys.argv[1]
-    if not os.path.isfile(pdf_path):
-        print(f"File not found: {pdf_path}")
-        sys.exit(1)
+    if not result_path or not os.path.isfile(result_path):
+        return "Result file not found", 404
 
-    result = main(pdf_path)
-    print(result)
+    with open(result_path, 'r') as f:
+        result_data = json.load(f)
+
+    return render_template('export.html', result=json.dumps(result_data, indent=4), pdf=pdf_path)
+
+if __name__ == '__main__':
+    app.run(debug=True)

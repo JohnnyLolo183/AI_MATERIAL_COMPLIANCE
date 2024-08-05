@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function() {
             resultDiv.innerHTML = "<p>Uploading and processing, please wait...</p>";
 
             // Send the file to the server
-            const response = await fetch("upload.php", {
+            const response = await fetch("/upload", {  // Corrected to Flask route
                 method: "POST",
                 body: formData
             });
@@ -31,12 +31,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 throw new Error(responseText);
             }
 
-            // Parse the JSON response
+            // Parse the JSON response if necessary
             const resultData = JSON.parse(responseText);
 
-            // If the response contains a success message, redirect to DataExtract.html
+            // If the response contains a success message, redirect to extract.html
             if (resultData.result) {
-                window.location.href = "DataExtract.html?pdf=" + encodeURIComponent(resultData.pdfUrl);
+                window.location.href = "extract.html?pdf=" + encodeURIComponent(resultData.pdfUrl);
             } else {
                 resultDiv.innerHTML = resultData.error;
             }

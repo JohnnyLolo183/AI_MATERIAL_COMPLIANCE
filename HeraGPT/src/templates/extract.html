@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Begin Data Extraction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/styles.css') }}">
     <style>
         .pdf-viewer-container {
             width: 100%;
@@ -17,20 +17,18 @@
             height: 100%;
             border: none;
         }
-        a {
-            text-decoration: none;
-        }
+
         .action-btn, .home-btn {
-    background-color: #545b62;
-    color: white;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 5px;
-    font-size: 18px;
-    cursor: pointer;
-    width: 50%;
-    text-align: center;
-}
+            background-color: #545b62;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px 0;
+            width: 80%;
+        }
     </style>
 </head>
 <body class="new-page">
@@ -38,8 +36,7 @@
         <div class="left-side">
             <img src="../images/HERA2.png" alt="HERA Logo" class="logo-left">
             <div class="button-container">
-                <a id="downloadLink" class="action-btn">Download</a>
-                <a href="delete_uploads.php" class="home-btn">Home</a>
+                <button id="beginExtractionBtn" class="action-btn">Begin Data Extraction</button>
             </div>
         </div>
         <div class="right-side">
@@ -53,15 +50,19 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const fileUrl = urlParams.get('file');
+            const pdfUrl = urlParams.get('pdf');
 
-            if (fileUrl) {
-                document.getElementById('pdfViewer').src = fileUrl;
-                document.getElementById('downloadLink').href = fileUrl;
-                console.log("File URL set to:", fileUrl); // Debugging line
+            if (pdfUrl) {
+                document.getElementById('pdfViewer').src = pdfUrl;
+                console.log("PDF URL set to:", pdfUrl); // Debugging line
             } else {
-                console.error("No file URL found in query parameters"); // Debugging line
+                console.error("No PDF URL found in query parameters"); // Debugging line
             }
+
+            const beginExtractionBtn = document.getElementById("beginExtractionBtn");
+            beginExtractionBtn.addEventListener("click", function() {
+                window.location.href = "process_extraction?pdf=" + encodeURIComponent(pdfUrl);
+            });
         });
     </script>
 </body>
