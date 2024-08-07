@@ -2,10 +2,14 @@ from flask import Flask, request, redirect, url_for, flash, render_template, sen
 import os
 from werkzeug.utils import secure_filename
 import mimetypes
+from load_env import load_env
+
+# Load environment variables
+load_env('../.env')
 
 app = Flask(__name__)
-app.secret_key = 'default_secret_key'  # Replace with a secure secret key if needed
-UPLOAD_FOLDER = 'uploads'
+app.secret_key = os.getenv('SECRET_KEY')
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
 ALLOWED_EXTENSIONS = {'pdf'}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
@@ -24,7 +28,7 @@ def upload_file():
     if 'pdfFile' not in request.files:
         flash('No file part')
         return redirect(url_for('index'))
-    
+
     file = request.files['pdfFile']
     if file.filename == '':
         flash('No selected file')
@@ -33,19 +37,18 @@ def upload_file():
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        
+
         if not os.path.exists(UPLOAD_FOLDER):
             os.makedirs(UPLOAD_FOLDER)
 
         file.save(file_path)
 
-        # Check if the file is a PDF
         mime_type, _ = mimetypes.guess_type(file_path)
         if mime_type != 'application/pdf':
             os.remove(file_path)
             flash('Uploaded file is not a PDF.')
             return jsonify({'error': 'Uploaded file is not a PDF.'}), 400
-        
+
         return jsonify({'result': True, 'pdfUrl': file_path})
 
     return jsonify({'error': 'Invalid file type'}), 400
@@ -63,8 +66,6 @@ def process_extraction():
     if not pdf_path or not os.path.isfile(pdf_path):
         return "File not found", 404
 
-    # Your processing logic here
-    # For now, just redirect to a placeholder page
     return f"Processing {pdf_path}..."
 
 @app.route('/delete_uploads')

@@ -42,7 +42,7 @@
         <div class="right-side">
             <div class="certificate-outline">
                 <div class="pdf-viewer-container">
-                    <iframe id="pdfViewer" class="pdf-viewer" src="" frameborder="0"></iframe>
+                    <iframe id="pdfViewer" class="pdf-viewer" src="{{ pdf }}" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
@@ -61,7 +61,7 @@
 
             const beginExtractionBtn = document.getElementById("beginExtractionBtn");
             beginExtractionBtn.addEventListener("click", function() {
-                window.location.href = "process_extraction?pdf=" + encodeURIComponent(pdfUrl);
+                window.location.href = "{{ url_for('process_extraction') }}?pdf=" + encodeURIComponent(pdfUrl);
             });
         });
     </script>

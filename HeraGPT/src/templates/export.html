@@ -193,7 +193,7 @@
 
             exportBtn.addEventListener('click', function() {
                 if (stampedFilePath) {
-                    window.location.href = `download.html?file=${encodeURIComponent(stampedFilePath)}`;
+                    window.location.href = `{{ url_for('download') }}?file=${encodeURIComponent(stampedFilePath)}`;
                 } else {
                     alert('Please mark the certificate as compliant or non-compliant before exporting.');
                 }
