@@ -9,6 +9,7 @@
         .container {
             display: flex;
             height: 100vh;
+            padding-top: 20px; /* Add padding to the top to avoid cut-off */
         }
 
         .left-side {
@@ -60,21 +61,22 @@
             padding: 10px 20px;
             margin: 10px 0;
             border: 2px solid #545b62;
-            background-color: white;
+            background-color: #545b62;
             cursor: pointer;
             width: 100%;
             text-align: center;
             border-radius: 5px;
             font-size: 14px;
-            color: #545b62;
+            color: white;
+            transition: background-color 0.3s;
         }
 
-        .status-btn.compliant {
+        .status-btn.compliant:hover {
             background-color: lightgreen;
             color: #545b62;
         }
 
-        .status-btn.non-compliant {
+        .status-btn.non-compliant:hover {
             background-color: lightcoral;
             color: #545b62;
         }
