@@ -29,11 +29,11 @@ def extract_text_from_pdf(pdf_path):
 
 def extract_data(text):
     data = {
-        'manufacturer': extract_value(r'Manufacturer: (\w+)', text),
-        'certificate_number': extract_value(r'Certificate Number: (\d+)', text),
-        'material_standard': extract_value(r'Material Standard: (.+)', text),
-        'material_grade': extract_value(r'Material Grade: (.+)', text),
-        'description': extract_value(r'Description: (.+)', text),
+        'manufacturer': extract_value(r'Manufacturer:\s*(.+)', text),
+        'certificate_number': extract_value(r'Certificate number:\s*(.+)', text),
+        'material_standard': extract_value(r'Material Standard:\s*(.+)', text),
+        'material_grade': extract_value(r'Material Grade:\s*(.+)', text),
+        'description': extract_value(r'Description:\s*(.+)', text),
         'chemical_analysis': extract_elements(text),
         'mechanical_analysis': extract_mechanical(text)
     }
@@ -51,7 +51,7 @@ def extract_elements(text):
     for element in elements:
         match = re.search(rf'\b{element}\b\s*[:=]?\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
         if match:
-            data[element] = float(match.group(1))
+            data[element] = {'symbol': element, 'percentage': float(match.group(1))}
     return data
 
 def extract_mechanical(text):
@@ -60,7 +60,7 @@ def extract_mechanical(text):
     for property in mechanical_properties:
         match = re.search(rf'{property}:\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
         if match:
-            data[property] = match.group(1)
+            data[property] = {'unit': 'MPa' if 'strength' in property else '%', 'result': float(match.group(1))}
     return data
 
 @app.route('/')

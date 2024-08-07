@@ -12,7 +12,7 @@
         }
 
         .left-side {
-            width: 33%;
+            width: 25%;
             padding: 20px;
             box-sizing: border-box;
             display: flex;
@@ -20,13 +20,22 @@
             justify-content: space-between;
         }
 
+        .middle-side {
+            width: 50%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
         .right-side {
-            width: 67%;
-            display: flex;
+            width: 25%;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+            overflow-y: auto;
         }
 
         .pdf-viewer-container {
-            width: 67%;
+            width: 100%;
             height: 100%;
             border: 1px solid #ccc;
         }
@@ -35,14 +44,6 @@
             width: 100%;
             height: 100%;
             border: none;
-        }
-
-        .results-container {
-            width: 33%;
-            padding: 20px;
-            box-sizing: border-box;
-            background-color: #f4f4f4;
-            overflow-y: auto;
         }
 
         .results-container pre {
@@ -58,40 +59,87 @@
         .status-btn {
             padding: 10px 20px;
             margin: 10px 0;
-            border: 2px solid black;
+            border: 2px solid #545b62;
             background-color: white;
             cursor: pointer;
             width: 100%;
             text-align: center;
-            opacity: 0.8;
             border-radius: 5px;
+            font-size: 14px;
+            color: #545b62;
         }
 
-        .status-btn.active {
-            opacity: 1;
+        .status-btn.compliant {
+            background-color: lightgreen;
+            color: #545b62;
         }
 
-        .status-btn.compliant.active {
-            background-color: green;
-            opacity: 0.60;
-        }
-
-        .status-btn.non-compliant.active {
-            background-color: red;
-            opacity: 0.60;
+        .status-btn.non-compliant {
+            background-color: lightcoral;
+            color: #545b62;
         }
 
         .action-btn {
             background-color: #545b62;
             color: white;
-            padding: 15px 40px;
+            padding: 10px 20px;
             border: none;
             border-radius: 5px;
-            font-size: 18px;
+            font-size: 14px;
             cursor: pointer;
             margin-top: 10px;
             width: 100%;
             text-align: center;
+        }
+
+        .analysis-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .analysis-table th, .analysis-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .analysis-table th {
+            background-color: #f2f2f2;
+            color: #545b62;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            color: #545b62;
+            font-size: 12px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+
+        .scroll-box {
+            width: 100%;
+            height: 50px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+            background-color: white;
+        }
+
+        h3 {
+            color: #545b62;
         }
     </style>
 </head>
@@ -105,13 +153,126 @@
                 <button id="exportBtn" class="action-btn">Export</button>
             </div>
         </div>
-        <div class="right-side">
+        <div class="middle-side">
             <div class="pdf-viewer-container">
-                <iframe id="pdfViewer" class="pdf-viewer" src="{{ url_for('uploaded_file', filename=pdf.split('/')[-1]) }}" frameborder="0"></iframe>
+                <iframe id="pdfViewer" class="pdf-viewer" src="{{ pdf }}" frameborder="0"></iframe>
             </div>
+        </div>
+        <div class="right-side">
             <div class="results-container" id="resultsContainer">
                 <h3>Results</h3>
-                <pre id="openaiResults"></pre>
+                <div class="form-group">
+                    <label for="manufacturer">Manufacturer</label>
+                    <input type="text" id="manufacturer" value="{{ data.manufacturer }}">
+                </div>
+                <div class="form-group">
+                    <label for="certificate_number">Certificate Number</label>
+                    <input type="text" id="certificate_number" value="{{ data.certificate_number }}">
+                </div>
+                <div class="form-group">
+                    <label for="material_standard">Material Standard</label>
+                    <input type="text" id="material_standard" value="{{ data.material_standard }}">
+                </div>
+                <div class="form-group">
+                    <label for="material_grade">Material Grade</label>
+                    <input type="text" id="material_grade" value="{{ data.material_grade }}">
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" value="{{ data.description }}">
+                </div>
+                <div class="form-group">
+                    <label for="materials_heat_no">Materials (Heat No.)</label>
+                    <div class="scroll-box" id="materials_heat_no">{{ data.materials_heat_no }}</div>
+                </div>
+                <h3>Chemical Analysis</h3>
+                <table class="analysis-table" id="chemicalTable">
+                    <thead>
+                        <tr>
+                            <th>Elements</th>
+                            <th>Symbol</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Carbon</td>
+                            <td>C</td>
+                            <td id="C"></td>
+                        </tr>
+                        <tr>
+                            <td>Magnesium</td>
+                            <td>Mn</td>
+                            <td id="Mn"></td>
+                        </tr>
+                        <tr>
+                            <td>Phosphorus</td>
+                            <td>P</td>
+                            <td id="P"></td>
+                        </tr>
+                        <tr>
+                            <td>Sulfur</td>
+                            <td>S</td>
+                            <td id="S"></td>
+                        </tr>
+                        <tr>
+                            <td>Silicon</td>
+                            <td>Si</td>
+                            <td id="Si"></td>
+                        </tr>
+                        <tr>
+                            <td>Chromium</td>
+                            <td>Cr</td>
+                            <td id="Cr"></td>
+                        </tr>
+                        <tr>
+                            <td>Molybdenum</td>
+                            <td>Mo</td>
+                            <td id="Mo"></td>
+                        </tr>
+                        <tr>
+                            <td>Nickel</td>
+                            <td>Ni</td>
+                            <td id="Ni"></td>
+                        </tr>
+                        <tr>
+                            <td>Copper</td>
+                            <td>Cu</td>
+                            <td id="Cu"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h3>Mechanical Analysis</h3>
+                <table class="analysis-table" id="mechanicalTable">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Unit</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Yield strength</td>
+                            <td>MPa</td>
+                            <td id="Yield_strength"></td>
+                        </tr>
+                        <tr>
+                            <td>Ultimate tensile</td>
+                            <td>MPa</td>
+                            <td id="Ultimate_tensile"></td>
+                        </tr>
+                        <tr>
+                            <td>Elongation</td>
+                            <td>%</td>
+                            <td id="Elongation"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="form-group">
+                    <label for="comments">Comments</label>
+                    <textarea id="comments" rows="4"></textarea>
+                </div>
             </div>
         </div>
     </div>
@@ -120,25 +281,37 @@
             const urlParams = new URLSearchParams(window.location.search);
             const pdfUrl = urlParams.get('pdf');
             const resultUrl = urlParams.get('result');
-            let stampedFilePath = '';
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
-                console.log("PDF URL set to:", pdfUrl); // Debugging line
             } else {
-                console.error("No PDF URL found in query parameters"); // Debugging line
+                console.error("No PDF URL found in query parameters");
             }
 
             if (resultUrl) {
                 fetch(resultUrl)
                     .then(response => response.json())
                     .then(data => {
-                        const formattedResult = JSON.stringify(data, null, 4);
-                        document.getElementById('openaiResults').innerHTML = formattedResult.replace(/\n/g, '<br>');
+                        document.getElementById('manufacturer').value = data.manufacturer || '';
+                        document.getElementById('certificate_number').value = data.certificate_number || '';
+                        document.getElementById('material_standard').value = data.material_standard || '';
+                        document.getElementById('material_grade').value = data.material_grade || '';
+                        document.getElementById('description').value = data.description || '';
+                        document.getElementById('materials_heat_no').innerText = data.materials_heat_no || '';
+
+                        const chemicalElements = ['C', 'Mn', 'P', 'S', 'Si', 'Cr', 'Mo', 'Ni', 'Cu'];
+                        chemicalElements.forEach(element => {
+                            document.getElementById(element).innerText = data.chemical_analysis[element] || '';
+                        });
+
+                        const mechanicalProperties = ['Yield_strength', 'Ultimate_tensile', 'Elongation'];
+                        mechanicalProperties.forEach(property => {
+                            document.getElementById(property).innerText = data.mechanical_analysis[property] || '';
+                        });
                     })
                     .catch(error => console.error('Error:', error));
             } else {
-                console.error("No result found in query parameters"); // Debugging line
+                console.error("No result found in query parameters");
             }
 
             const compliantBtn = document.getElementById('compliantBtn');
