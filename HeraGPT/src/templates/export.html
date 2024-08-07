@@ -6,8 +6,27 @@
     <title>Export</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/styles.css') }}">
     <style>
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .left-side {
+            width: 33%;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .right-side {
+            width: 67%;
+            display: flex;
+        }
+
         .pdf-viewer-container {
-            width: 100%;
+            width: 67%;
             height: 100%;
             border: 1px solid #ccc;
         }
@@ -19,73 +38,21 @@
         }
 
         .results-container {
-            margin-top: 5px;
+            width: 33%;
             padding: 20px;
-            width: 50%;
+            box-sizing: border-box;
             background-color: #f4f4f4;
-            white-space: pre-wrap; /* Ensure text wraps within the container */
-            max-height: auto; /* Adjust this value as needed */
-            overflow-y: auto; /* Add vertical scroll if content overflows */
+            overflow-y: auto;
         }
 
         .results-container pre {
             white-space: normal; /* Ensure text wraps within the container */
         }
 
-        .left-side {
-            width: 20%; /* Reduced width */
-            padding: 20px;
-            box-sizing: border-box;
-            height: 100%;
-            position: relative; /* For absolute positioning of elements */
-        }
-
-        .right-side {
-            width: 80%; /* Increased width */
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-            padding: 20px;
-            box-sizing: border-box;
-            height: 100%;
-            flex-wrap: wrap; /* Allows content to wrap */
-        }
-
-        .action-btn {
-            padding: 10px 20px; /* Adjusted padding to reduce space */
-        }
-
         .button-container {
             display: flex;
             flex-direction: column;
             align-items: center; /* Center the button horizontally */
-            position: absolute;
-            bottom: 20px; /* Space from the bottom */
-            width: 100%;
-        }
-
-        .value-section {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            padding: 10px;
-            box-sizing: border-box;
-            overflow-y: auto; /* Add vertical scroll if content exceeds container */
-        }
-
-        .value-item {
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .value-item label {
-            width: 30%;
-        }
-
-        .value-item .display-box {
-            width: 70%;
         }
 
         .status-btn {
@@ -94,7 +61,7 @@
             border: 2px solid black;
             background-color: white;
             cursor: pointer;
-            width: 50%;
+            width: 100%;
             text-align: center;
             opacity: 0.8;
             border-radius: 5px;
@@ -113,6 +80,19 @@
             background-color: red;
             opacity: 0.60;
         }
+
+        .action-btn {
+            background-color: #545b62;
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="new-page">
@@ -126,14 +106,12 @@
             </div>
         </div>
         <div class="right-side">
-            <div class="certificate-outline">
-                <div class="pdf-viewer-container">
-                    <iframe id="pdfViewer" class="pdf-viewer" src="" frameborder="0"></iframe>
-                </div>
-                <div class="results-container" id="resultsContainer">
-                    <h3>Results</h3>
-                    <pre id="openaiResults"></pre>
-                </div>
+            <div class="pdf-viewer-container">
+                <iframe id="pdfViewer" class="pdf-viewer" src="{{ url_for('uploaded_file', filename=pdf.split('/')[-1]) }}" frameborder="0"></iframe>
+            </div>
+            <div class="results-container" id="resultsContainer">
+                <h3>Results</h3>
+                <pre id="openaiResults"></pre>
             </div>
         </div>
     </div>
@@ -155,7 +133,7 @@
                 fetch(resultUrl)
                     .then(response => response.json())
                     .then(data => {
-                        const formattedResult = data.result.replace(/(Compliant|Non-Compliant)/g, '\n$1\n\n');
+                        const formattedResult = JSON.stringify(data, null, 4);
                         document.getElementById('openaiResults').innerHTML = formattedResult.replace(/\n/g, '<br>');
                     })
                     .catch(error => console.error('Error:', error));
@@ -167,36 +145,18 @@
             const nonCompliantBtn = document.getElementById('nonCompliantBtn');
             const exportBtn = document.getElementById('exportBtn');
 
-            function markStamp(type) {
-                fetch(`stamp_pdf.php?pdf=${encodeURIComponent(pdfUrl)}&type=${type}`)
-                    .then(response => response.text())
-                    .then(data => {
-                        stampedFilePath = data.trim();
-                        if (type === 'compliant') {
-                            compliantBtn.classList.add('active');
-                            nonCompliantBtn.classList.remove('active');
-                        } else {
-                            nonCompliantBtn.classList.add('active');
-                            compliantBtn.classList.remove('active');
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-            }
-
             compliantBtn.addEventListener('click', function() {
-                markStamp('compliant');
+                compliantBtn.classList.add('active');
+                nonCompliantBtn.classList.remove('active');
             });
 
             nonCompliantBtn.addEventListener('click', function() {
-                markStamp('noncompliant');
+                nonCompliantBtn.classList.add('active');
+                compliantBtn.classList.remove('active');
             });
 
             exportBtn.addEventListener('click', function() {
-                if (stampedFilePath) {
-                    window.location.href = `{{ url_for('download') }}?file=${encodeURIComponent(stampedFilePath)}`;
-                } else {
-                    alert('Please mark the certificate as compliant or non-compliant before exporting.');
-                }
+                alert('Export functionality not implemented yet.');
             });
         });
     </script>

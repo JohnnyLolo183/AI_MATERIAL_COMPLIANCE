@@ -3,6 +3,10 @@ import os
 from werkzeug.utils import secure_filename
 import mimetypes
 from load_env import load_env
+from pdfminer.high_level import extract_text
+import json
+import re
+from urllib.parse import urlparse, unquote
 
 # Load environment variables
 load_env('../.env')
@@ -18,6 +22,46 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def extract_text_from_pdf(pdf_path):
+    text = extract_text(pdf_path)
+    return text
+
+def extract_data(text):
+    data = {
+        'manufacturer': extract_value(r'Manufacturer: (\w+)', text),
+        'certificate_number': extract_value(r'Certificate Number: (\d+)', text),
+        'material_standard': extract_value(r'Material Standard: (.+)', text),
+        'material_grade': extract_value(r'Material Grade: (.+)', text),
+        'description': extract_value(r'Description: (.+)', text),
+        'chemical_analysis': extract_elements(text),
+        'mechanical_analysis': extract_mechanical(text)
+    }
+    return data
+
+def extract_value(pattern, text):
+    match = re.search(pattern, text)
+    if match:
+        return match.group(1)
+    return ''
+
+def extract_elements(text):
+    elements = ['C', 'Mn', 'P', 'S', 'Si', 'Cr', 'Mo', 'Ni', 'Cu']
+    data = {}
+    for element in elements:
+        match = re.search(rf'\b{element}\b\s*[:=]?\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
+        if match:
+            data[element] = float(match.group(1))
+    return data
+
+def extract_mechanical(text):
+    mechanical_properties = ['Yield strength', 'Ultimate tensile', 'Elongation']
+    data = {}
+    for property in mechanical_properties:
+        match = re.search(rf'{property}:\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
+        if match:
+            data[property] = match.group(1)
+    return data
 
 @app.route('/')
 def index():
@@ -49,7 +93,7 @@ def upload_file():
             flash('Uploaded file is not a PDF.')
             return jsonify({'error': 'Uploaded file is not a PDF.'}), 400
 
-        return jsonify({'result': True, 'pdfUrl': url_for('uploaded_file', filename=filename)})
+        return jsonify({'result': True, 'pdfUrl': url_for('uploaded_file', filename=filename, _external=True)})
 
     return jsonify({'error': 'Invalid file type'}), 400
 
@@ -64,11 +108,49 @@ def extract():
 
 @app.route('/process_extraction')
 def process_extraction():
-    pdf_path = request.args.get('pdf')
-    if not pdf_path or not os.path.isfile(os.path.join(app.config['UPLOAD_FOLDER'], pdf_path)):
+    pdf_url = request.args.get('pdf')
+    
+    # Extract the filename from the URL
+    parsed_url = urlparse(pdf_url)
+    pdf_path = unquote(parsed_url.path)
+    
+    # Ensure the path is relative and points to the correct uploads folder
+    if pdf_path.startswith('/'):
+        pdf_path = pdf_path[1:]
+
+    pdf_full_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(pdf_path))
+    
+    if not pdf_full_path or not os.path.isfile(pdf_full_path):
         return "File not found", 404
 
-    return f"Processing {pdf_path}..."
+    # Extract text from the uploaded PDF
+    pdf_content = extract_text_from_pdf(pdf_full_path)
+
+    if not pdf_content:
+        return "Failed to extract text from the certificate PDF.", 500
+
+    # Extract data
+    extracted_data = extract_data(pdf_content)
+
+    # Save the result to a JSON file
+    result_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.basename(pdf_path)}_result.json")
+    with open(result_path, 'w') as f:
+        json.dump(extracted_data, f, indent=4)
+
+    return redirect(url_for('export', result=result_path, pdf=pdf_full_path))
+
+@app.route('/export')
+def export():
+    result_path = request.args.get('result')
+    pdf_path = request.args.get('pdf')
+
+    if not result_path or not os.path.isfile(result_path):
+        return "Result file not found", 404
+
+    with open(result_path, 'r') as f:
+        result_data = json.load(f)
+
+    return render_template('export.html', data=result_data, pdf=pdf_path)
 
 @app.route('/delete_uploads')
 def delete_uploads():
@@ -86,4 +168,4 @@ def send_static(filename):
     return send_from_directory('.', filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='127.0.0.1', port=5000)

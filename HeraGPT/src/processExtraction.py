@@ -18,40 +18,33 @@ def read_standard(standard_name, directory):
     return None
 
 def extract_data(text):
-    elements = ['C', 'Mn', 'P', 'S', 'Si', 'Cr', 'Mo', 'Ni', 'Cu']
     data = {}
-    
+    # Assuming a similar structure to the mockup provided
+    data['manufacturer'] = re.search(r'Manufacturer:\s*(.+)', text).group(1)
+    data['certificate_number'] = re.search(r'Certificate number:\s*(.+)', text).group(1)
+    data['material_standard'] = re.search(r'Material Standard:\s*(.+)', text).group(1)
+    data['material_grade'] = re.search(r'Material Grade:\s*(.+)', text).group(1)
+    data['description'] = re.search(r'Description:\s*(.+)', text).group(1)
+
+    # Extract chemical analysis
+    chemical_analysis = {}
+    elements = ['C', 'Mn', 'P', 'S', 'Si', 'Cr', 'Mo', 'Ni', 'Cu']
     for element in elements:
         match = re.search(rf'\b{element}\b\s*[:=]?\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
         if match:
-            data[element] = float(match.group(1))
+            chemical_analysis[element] = match.group(1)
+    data['chemical_analysis'] = chemical_analysis
+
+    # Extract mechanical analysis
+    mechanical_analysis = {}
+    properties = ['Yield strength', 'Ultimate tensile', 'Elongation']
+    for prop in properties:
+        match = re.search(rf'\b{prop}\b\s*[:=]?\s*(\d+)', text, re.IGNORECASE)
+        if match:
+            mechanical_analysis[prop] = match.group(1)
+    data['mechanical_analysis'] = mechanical_analysis
 
     return data
-
-def compare_data(cert_data, std_data):
-    compliant = True
-    non_compliant_items = []
-
-    for element, cert_value in cert_data.items():
-        std_value = std_data.get(element)
-        if std_value is not None:
-            min_val, max_val = std_value
-            if not (min_val <= cert_value <= max_val):
-                compliant = False
-                non_compliant_items.append((element, cert_value, std_value))
-
-    if compliant:
-        result = "Compliant: This certificate complies with the standard."
-    else:
-        result = "Non-Compliant: This certificate fails to comply with the standard."
-        for item in non_compliant_items:
-            result += f"\nNon-Compliant Item: {item[0]}, Certificate Value: {item[1]}, Standard Range: {item[2][0]} - {item[2][1]}"
-    
-    return {
-        "compliant": compliant,
-        "result": result,
-        "non_compliant_items": non_compliant_items
-    }
 
 @app.route('/process_extraction')
 def process_extraction():
@@ -61,34 +54,14 @@ def process_extraction():
 
     # Extract text from the uploaded PDF
     pdf_content = extract_text_from_pdf(pdf_path)
-
-    if not pdf_content:
-        return "Failed to extract text from the certificate PDF.", 500
-
-    # Identify the mentioned standard
-    match = re.search(r'AS\s*/?\s*NZS\s*\d{4}', pdf_content)
-    if not match:
-        return "No standard mentioned in the certificate.", 400
-
-    standard_name = match.group(0)
-
-    # Read the specific standard from the local directory
-    standards_directory = './NzStandards'
-    standard_content = read_standard(standard_name, standards_directory)
-    if not standard_content:
-        return "Standard not found in the local directory.", 404
-
-    # Extract data and compare
-    cert_data = extract_data(pdf_content)
-    std_data = extract_data(standard_content)
-    comparison_result = compare_data(cert_data, std_data)
+    extracted_data = extract_data(pdf_content)
 
     # Save the result to a JSON file
     result_path = os.path.join('uploads', f"{os.path.basename(pdf_path)}_result.json")
     with open(result_path, 'w') as f:
-        json.dump(comparison_result, f, indent=4)
+        json.dump(extracted_data, f, indent=4)
 
-    return redirect(url_for('export', result=result_path, pdf=pdf_path))
+    return render_template('export.html', pdf=pdf_path, data=extracted_data)
 
 @app.route('/export')
 def export():
