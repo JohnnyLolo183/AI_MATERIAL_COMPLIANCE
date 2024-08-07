@@ -49,9 +49,18 @@
     </div>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pdfUrl = urlParams.get('pdf');
+
+            if (pdfUrl) {
+                document.getElementById('pdfViewer').src = pdfUrl;
+                console.log("PDF URL set to:", pdfUrl); // Debugging line
+            } else {
+                console.error("No PDF URL found in query parameters"); // Debugging line
+            }
+
             const beginExtractionBtn = document.getElementById("beginExtractionBtn");
             beginExtractionBtn.addEventListener("click", function() {
-                const pdfUrl = document.getElementById('pdfViewer').src;
                 window.location.href = "{{ url_for('process_extraction') }}?pdf=" + encodeURIComponent(pdfUrl);
             });
         });

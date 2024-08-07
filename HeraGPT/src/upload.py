@@ -38,8 +38,8 @@ def upload_file():
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-        if not os.path.exists(UPLOAD_FOLDER):
-            os.makedirs(UPLOAD_FOLDER)
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
 
         file.save(file_path)
 
@@ -49,21 +49,23 @@ def upload_file():
             flash('Uploaded file is not a PDF.')
             return jsonify({'error': 'Uploaded file is not a PDF.'}), 400
 
-        return jsonify({'result': True, 'pdfUrl': file_path})
+        return jsonify({'result': True, 'pdfUrl': url_for('uploaded_file', filename=filename)})
 
     return jsonify({'error': 'Invalid file type'}), 400
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/extract')
 def extract():
     pdf_path = request.args.get('pdf')
-    if not pdf_path or not os.path.isfile(pdf_path):
-        return "File not found", 404
     return render_template('extract.html', pdf=pdf_path)
 
 @app.route('/process_extraction')
 def process_extraction():
     pdf_path = request.args.get('pdf')
-    if not pdf_path or not os.path.isfile(pdf_path):
+    if not pdf_path or not os.path.isfile(os.path.join(app.config['UPLOAD_FOLDER'], pdf_path)):
         return "File not found", 404
 
     return f"Processing {pdf_path}..."
