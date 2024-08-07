@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // Check if the response is ok
             if (responseData.result) {
-                window.location.href = `/extract?pdf=${encodeURIComponent(responseData.pdfUrl)}`;
+                window.location.href = "/extract?pdf=" + encodeURIComponent(responseData.pdfUrl);
             } else {
                 resultDiv.innerHTML = responseData.error;
             }
