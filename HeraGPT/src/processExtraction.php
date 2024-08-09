@@ -1,28 +1,37 @@
 <?php
+require '../vendor/autoload.php'; // Include Composer's autoload file
 require 'load_env.php'; // Include your custom environment loader
 
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 // Load the environment variables
-try {
-    loadEnv(__DIR__ . '/.env');
-} catch (Exception $e) {
-    echo "Error loading .env file: " . $e->getMessage();
+$envFilePath = __DIR__ . '/.env';
+if (file_exists($envFilePath)) {
+    try {
+        loadEnv($envFilePath);
+    } catch (Exception $e) {
+        echo "Error loading .env file: " . $e->getMessage();
+        exit;
+    }
+} else {
+    echo "Error loading .env file: Environment file not found at $envFilePath.";
     exit;
 }
 
 // Function to call OpenAI API using cURL
-function callOpenAI($certificateContent, $standardContent, $apiKey) {
+function callOpenAI($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
-    
-    // Prepare a prompt with certificate content and ask the AI to provide a concise compliance check
-    $prompt = "Analyze the uploaded steel certificates chemical analysis and mechanical testing data values. 
-        Analyze the uploaded NZ Standard and compare the specifications with the certificate data values.
-        If the certificate meets standards specifications then return compliant else non-compliant.
-        If result is compliant, return 'Compliant' and 'This certificate complies with (standard name)' only. 
-        If result is non-compliant, return 'Non-Compliant', 'This certificate fails to comply with (standard name)', 
-        and comparison of non-compliant data values only. 
-        Ensure extracted numbers are correct and match.
-        \n\nCertificate Content:\n$certificateContent
-        \n\nStandard Content:\n$standardContent";
+
+    // Prepare a concise prompt with both files' content and ask the AI to provide a compliance check
+    $prompt = "Analyze the uploaded steel certificate and NZ Standard file. 
+        If the certificate meets standards specifications, return 'Result: Compliant', else return 'Result: Non-compliant'.
+        Mention the uploaded file names and whether the certificate complies with the standard as shown:
+        'Certificate (certificate file name) 'complies/does not comply' with (standard file name). 
+        Only provide the required information. 
+        \nCertificate File Name: $certificateFileName
+        \nCertificate Content: $certificateContent
+        \nStandard File Name: $standardFileName
+        \nStandard Content: $standardContent";
 
     $data = [
         'model' => 'gpt-4o',
@@ -30,9 +39,9 @@ function callOpenAI($certificateContent, $standardContent, $apiKey) {
             ['role' => 'system', 'content' => 'You are a Steel certificate compliance checker.'],
             ['role' => 'user', 'content' => $prompt],
         ],
-        'max_tokens' => 4000,
+        'max_tokens' => 4000, // Adjust this as needed
     ];
-    
+
     $headers = [
         'Content-Type: application/json',
         'Authorization: Bearer ' . $apiKey,
@@ -62,7 +71,7 @@ function callOpenAI($certificateContent, $standardContent, $apiKey) {
         echo "JSON decode error: " . json_last_error_msg();
         exit;
     }
-    
+
     // Extracting the required fields from the response (assuming the response format)
     $extractedData = [
         'response' => $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API',
@@ -72,20 +81,42 @@ function callOpenAI($certificateContent, $standardContent, $apiKey) {
 }
 
 // Function to extract text from PDF using pdftotext
-function extractTextFromPDF($pdfPath) {
+function extractTextFromPDF($pdfPath, $maxLength = 5000) {
     $outputFile = tempnam(sys_get_temp_dir(), 'pdftotext');
     shell_exec("pdftotext -q -nopgbrk -enc UTF-8 '$pdfPath' '$outputFile'");
     $text = file_get_contents($outputFile);
     unlink($outputFile);
-    return $text;
+    return substr($text, 0, $maxLength);
 }
 
-// Function to read the specific standard from the local directory
-function readStandard($standardName, $directory) {
-    $files = glob("$directory/*.pdf");
+// Function to extract text from Excel using PhpSpreadsheet
+function extractTextFromExcel($excelPath, $maxLength = 5000) {
+    $spreadsheet = IOFactory::load($excelPath);
+    $worksheet = $spreadsheet->getActiveSheet();
+    $text = '';
+    foreach ($worksheet->getRowIterator() as $row) {
+        $cellIterator = $row->getCellIterator();
+        $cellIterator->setIterateOnlyExistingCells(false);
+        foreach ($cellIterator as $cell) {
+            $text .= $cell->getValue() . ' ';
+        }
+        $text .= "\n";
+        if (strlen($text) > $maxLength) {
+            break;
+        }
+    }
+    return substr($text, 0, $maxLength);
+}
+
+// Function to read the specific standard file and extract its text
+function readStandardFile($standardName, $directory, $maxLength = 5000) {
+    $files = glob("$directory/*.xlsx");
     foreach ($files as $file) {
-        if (stripos(basename($file, '.pdf'), str_replace('/', '-', strtolower($standardName))) !== false) {
-            return extractTextFromPDF($file);
+        if (stripos(basename($file, '.xlsx'), str_replace('/', '-', strtolower($standardName))) !== false) {
+            return [
+                'content' => extractTextFromExcel($file, $maxLength),
+                'filename' => basename($file),
+            ];
         }
     }
     return null;
@@ -110,10 +141,10 @@ if (isset($_GET['pdf'])) {
     }
     $standardName = $matches[0];
 
-    // Read the specific standard from the local directory
-    $standardsDirectory = __DIR__ . '/NzStandards';
-    $standardContent = readStandard($standardName, $standardsDirectory);
-    if (!$standardContent) {
+    // Read and extract text from the specific standard file
+    $standardsDirectory = __DIR__ . '/NzStandards/Excel';
+    $standardFile = readStandardFile($standardName, $standardsDirectory);
+    if (!$standardFile) {
         echo "Standard not found in the local directory.";
         exit;
     }
@@ -125,7 +156,7 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
-    $result = callOpenAI($pdfContent, $standardContent, $apiKey);
+    $result = callOpenAI($pdfContent, $standardFile['content'], basename($pdfPath), $standardFile['filename'], $apiKey);
 
     // Redirect to export.html with the result as a query parameter
     header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
