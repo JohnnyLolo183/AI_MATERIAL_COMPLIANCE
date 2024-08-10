@@ -45,3 +45,13 @@ body {
 .upload-btn:hover {
     background-color: #3a3a3a; /* Slightly darker grey for hover effect */
 }
+
+.description {
+    font-size: 16px; /* Adjust as needed */
+    color: #333; /* Adjust this color as needed */
+}
+
+.description.small-light {
+    font-size: 14px; /* One size smaller than the top description */
+    color: #898989; /* Light grey color */
+}

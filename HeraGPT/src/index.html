@@ -9,11 +9,14 @@
 <body>
     <div class="container">
         <img src="../images/HERA2.png" alt="HERA Logo" class="logo">
+        <p class="description">Compare Certificate Information to Industry Standards</p>
         <form id="pdfUploadForm" action="upload.php" method="post" enctype="multipart/form-data">
             <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" required>
             <button type="submit" class="upload-btn">Upload Certificate</button>
         </form>
+        <p class="description small-light">Ensure uploaded certificates are in pdf format and display good readability</p>
         <div id="result"></div>
     </div>
 </body>
 </html>
+

@@ -18,20 +18,82 @@ if (file_exists($envFilePath)) {
     exit;
 }
 
-// Function to call OpenAI API using cURL
-function callOpenAI($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey) {
+// Function to extract text from PDF using pdftotext
+function extractTextFromPDF($pdfPath, $maxLength = 5000) {
+    $outputFile = tempnam(sys_get_temp_dir(), 'pdftotext');
+    shell_exec("pdftotext -q -nopgbrk -enc UTF-8 '$pdfPath' '$outputFile'");
+    $text = file_get_contents($outputFile);
+    unlink($outputFile);
+    return substr($text, 0, $maxLength);
+}
+
+// Function to find all PNG files in the subfolder of the standards directory that matches the standard name
+function findPngFiles($directory, $standardName) {
+    $standardFolderName = str_replace('/', '-', $standardName);
+    $standardFolderName = preg_replace('/AS-NZS/', 'AS-NZS ', $standardFolderName);
+
+    $standardFolderPath = "$directory/$standardFolderName";
+
+    echo "Searching for folder: $standardFolderPath<br>";
+
+    // Search for PNG files in both lowercase and uppercase extensions
+    $files = array_merge(glob("$standardFolderPath/*.png"), glob("$standardFolderPath/*.PNG"));
+
+    // Check if glob found any files
+    if (empty($files)) {
+        echo "No files found in: $standardFolderPath. Checking variations...<br>";
+        $possibleFolders = glob("$directory/{$standardFolderName}*", GLOB_ONLYDIR);
+        foreach ($possibleFolders as $folder) {
+            echo "Checking possible folder: $folder<br>";
+            $files = array_merge($files, glob("$folder/*.png"), glob("$folder/*.PNG"));
+            if (!empty($files)) {
+                echo "Files found in $folder:<br>";
+                foreach ($files as $file) {
+                    echo " - $file<br>";
+                }
+            }
+        }
+    } else {
+        echo "Files found in $standardFolderPath:<br>";
+        foreach ($files as $file) {
+            echo " - $file<br>";
+        }
+    }
+
+    if (empty($files)) {
+        echo "No PNG files found in any variations.<br>";
+    } else {
+        echo "PNG files successfully identified.<br>";
+    }
+
+    $fileData = [];
+    foreach ($files as $file) {
+        $fileData[] = [
+            'path' => $file,
+            'filename' => basename($file),
+        ];
+    }
+
+    return $fileData;
+}
+
+
+
+// Function to call OpenAI API using cURL with PNG files in the prompt
+function callOpenAI($certificateContent, $pngFiles, $certificateFileName, $standardName, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
 
-    // Prepare a concise prompt with both files' content and ask the AI to provide a compliance check
-    $prompt = "Analyze the uploaded steel certificate and NZ Standard file. 
-        If the certificate meets standards specifications, return 'Result: Compliant', else return 'Result: Non-compliant'.
+    // Prepare a concise prompt that includes the certificate content, the names of the PNG files, and the standard name
+    $prompt = "Analyze the uploaded steel certificate and the following NZ standard images (PNG files) based on the standard: $standardName. 
         Mention the uploaded file names and whether the certificate complies with the standard as shown:
-        'Certificate (certificate file name) 'complies/does not comply' with (standard file name). 
-        Only provide the required information. 
+        'Result: (Compliant/Non-Compliant) Certificate (certificate file name) 'complies/does not comply' with $standardName.' 
+        If fails, provide 'Reason: (reason of failure)', just a short paragraph stating where and what failed, no need to display the number value.
+        Also if fails, state 'User should check for the following and any other unlisted values: (list of failed items sorted by '- item' (space) '- item')'.
+        Only provide required information and follow my prompt format exactly.
         \nCertificate File Name: $certificateFileName
         \nCertificate Content: $certificateContent
-        \nStandard File Name: $standardFileName
-        \nStandard Content: $standardContent";
+        \nStandard Name: $standardName
+        \nStandard Image Files: " . implode(", ", array_column($pngFiles, 'filename'));
 
     $data = [
         'model' => 'gpt-4o',
@@ -80,48 +142,6 @@ function callOpenAI($certificateContent, $standardContent, $certificateFileName,
     return json_encode($extractedData);
 }
 
-// Function to extract text from PDF using pdftotext
-function extractTextFromPDF($pdfPath, $maxLength = 5000) {
-    $outputFile = tempnam(sys_get_temp_dir(), 'pdftotext');
-    shell_exec("pdftotext -q -nopgbrk -enc UTF-8 '$pdfPath' '$outputFile'");
-    $text = file_get_contents($outputFile);
-    unlink($outputFile);
-    return substr($text, 0, $maxLength);
-}
-
-// Function to extract text from Excel using PhpSpreadsheet
-function extractTextFromExcel($excelPath, $maxLength = 5000) {
-    $spreadsheet = IOFactory::load($excelPath);
-    $worksheet = $spreadsheet->getActiveSheet();
-    $text = '';
-    foreach ($worksheet->getRowIterator() as $row) {
-        $cellIterator = $row->getCellIterator();
-        $cellIterator->setIterateOnlyExistingCells(false);
-        foreach ($cellIterator as $cell) {
-            $text .= $cell->getValue() . ' ';
-        }
-        $text .= "\n";
-        if (strlen($text) > $maxLength) {
-            break;
-        }
-    }
-    return substr($text, 0, $maxLength);
-}
-
-// Function to read the specific standard file and extract its text
-function readStandardFile($standardName, $directory, $maxLength = 5000) {
-    $files = glob("$directory/*.xlsx");
-    foreach ($files as $file) {
-        if (stripos(basename($file, '.xlsx'), str_replace('/', '-', strtolower($standardName))) !== false) {
-            return [
-                'content' => extractTextFromExcel($file, $maxLength),
-                'filename' => basename($file),
-            ];
-        }
-    }
-    return null;
-}
-
 // Handle OpenAI API call
 if (isset($_GET['pdf'])) {
     $pdfPath = urldecode($_GET['pdf']);
@@ -134,18 +154,18 @@ if (isset($_GET['pdf'])) {
     }
 
     // Identify the mentioned standard
-    preg_match('/AS\s*\/?\s*NZS\s*\d{4}/', $pdfContent, $matches);
+    preg_match('/AS\s*\/?\s*NZS\s*\d{4}(\.\d+)?/', $pdfContent, $matches);
     if (!isset($matches[0])) {
         echo "No standard mentioned in the certificate.";
         exit;
     }
     $standardName = $matches[0];
 
-    // Read and extract text from the specific standard file
-    $standardsDirectory = __DIR__ . '/NzStandards/Excel';
-    $standardFile = readStandardFile($standardName, $standardsDirectory);
-    if (!$standardFile) {
-        echo "Standard not found in the local directory.";
+    // Find PNG files in the subfolder of the standards directory
+    $standardsDirectory = __DIR__ . '/NzStandards';
+    $pngFiles = findPngFiles($standardsDirectory, $standardName);
+    if (empty($pngFiles)) {
+        echo "No PNG files found in the standards directory for $standardName.";
         exit;
     }
 
@@ -156,7 +176,7 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
-    $result = callOpenAI($pdfContent, $standardFile['content'], basename($pdfPath), $standardFile['filename'], $apiKey);
+    $result = callOpenAI($pdfContent, $pngFiles, basename($pdfPath), $standardName, $apiKey);
 
     // Redirect to export.html with the result as a query parameter
     header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
