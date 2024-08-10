@@ -29,43 +29,25 @@ function extractTextFromPDF($pdfPath, $maxLength = 5000) {
 
 // Function to find all PNG files in the subfolder of the standards directory that matches the standard name
 function findPngFiles($directory, $standardName) {
+    // Convert standard name to the folder format (e.g., "AS/NZS 3678" to "AS-NZS 3678")
     $standardFolderName = str_replace('/', '-', $standardName);
-    $standardFolderName = preg_replace('/AS-NZS/', 'AS-NZS ', $standardFolderName);
 
+    // Construct the full path to the standard folder
     $standardFolderPath = "$directory/$standardFolderName";
 
-    echo "Searching for folder: $standardFolderPath<br>";
+    // Search for PNG files in both the exact folder name and possible variations with .1, .2, etc.
+    $files = glob("$standardFolderPath/*.png");
 
-    // Search for PNG files in both lowercase and uppercase extensions
-    $files = array_merge(glob("$standardFolderPath/*.png"), glob("$standardFolderPath/*.PNG"));
-
-    // Check if glob found any files
+    // If no files are found, try adding variations with .1, .2, etc.
     if (empty($files)) {
-        echo "No files found in: $standardFolderPath. Checking variations...<br>";
-        $possibleFolders = glob("$directory/{$standardFolderName}*", GLOB_ONLYDIR);
+        // Try to find any folder that starts with the standard name and ends with a number after a dot
+        $possibleFolders = glob("$directory/{$standardFolderName}.*", GLOB_ONLYDIR);
         foreach ($possibleFolders as $folder) {
-            echo "Checking possible folder: $folder<br>";
-            $files = array_merge($files, glob("$folder/*.png"), glob("$folder/*.PNG"));
-            if (!empty($files)) {
-                echo "Files found in $folder:<br>";
-                foreach ($files as $file) {
-                    echo " - $file<br>";
-                }
-            }
-        }
-    } else {
-        echo "Files found in $standardFolderPath:<br>";
-        foreach ($files as $file) {
-            echo " - $file<br>";
+            $files = array_merge($files, glob("$folder/*.png"));
         }
     }
 
-    if (empty($files)) {
-        echo "No PNG files found in any variations.<br>";
-    } else {
-        echo "PNG files successfully identified.<br>";
-    }
-
+    // Prepare file data for each found PNG
     $fileData = [];
     foreach ($files as $file) {
         $fileData[] = [
@@ -77,19 +59,14 @@ function findPngFiles($directory, $standardName) {
     return $fileData;
 }
 
-
-
 // Function to call OpenAI API using cURL with PNG files in the prompt
 function callOpenAI($certificateContent, $pngFiles, $certificateFileName, $standardName, $apiKey) {
     $url = 'https://api.openai.com/v1/chat/completions';
 
     // Prepare a concise prompt that includes the certificate content, the names of the PNG files, and the standard name
-    $prompt = "Analyze the uploaded steel certificate and the following NZ standard images (PNG files) based on the standard: $standardName. 
-        Mention the uploaded file names and whether the certificate complies with the standard as shown:
-        'Result: (Compliant/Non-Compliant) Certificate (certificate file name) 'complies/does not comply' with $standardName.' 
-        If fails, provide 'Reason: (reason of failure)', just a short paragraph stating where and what failed, no need to display the number value.
-        Also if fails, state 'User should check for the following and any other unlisted values: (list of failed items sorted by '- item' (space) '- item')'.
-        Only provide required information and follow my prompt format exactly.
+    $prompt = "Analyze the uploaded steel certificate and the following NZ standard images (PNG files). 
+        Return 'Result: (Compliant/Non-Compliant) Certificate $certificateFileName 'complies/does not comply' with $standardName.' 
+        Only provide required information.
         \nCertificate File Name: $certificateFileName
         \nCertificate Content: $certificateContent
         \nStandard Name: $standardName
