@@ -9,52 +9,66 @@
         .container {
             display: flex;
             height: 100vh;
-            padding-top: 20px; /* Add padding to the top to avoid cut-off */
+            padding-top: 20px;
         }
 
         .left-side {
             width: 25%;
-            padding: 20px;
+            padding: 10px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            align-items: center;
         }
 
-        .middle-side {
-            width: 50%;
-            padding: 20px;
-            box-sizing: border-box;
+        .logo-left {
+            max-width: 60%;
+            height: auto;
         }
 
-        .right-side {
-            width: 25%;
-            padding: 20px;
-            box-sizing: border-box;
-            background-color: #f4f4f4;
-            overflow-y: auto;
+        .left-results-container {
+            width: 90%;
+            margin-top: 110px; /* Space between the logo and the headings */
+            background-color: #ADD8E6;
+            padding: 10px;
+            border-radius: 5px;
         }
 
-        .pdf-viewer-container {
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            color: #545b62;
+            font-size: 12px;
+        }
+
+        .form-group input, .form-group textarea {
             width: 100%;
-            height: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+
+        .scroll-box {
+            width: 100%;
+            height: 50px;
+            overflow-y: scroll;
             border: 1px solid #ccc;
-        }
-
-        .pdf-viewer {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .results-container pre {
-            white-space: normal; /* Ensure text wraps within the container */
+            padding: 8px;
+            box-sizing: border-box;
+            font-size: 12px;
+            background-color: white;
         }
 
         .button-container {
             display: flex;
             flex-direction: column;
-            align-items: center; /* Center the button horizontally */
+            align-items: center;
+            margin-top: auto;
         }
 
         .status-btn {
@@ -92,16 +106,62 @@
             margin-top: 10px;
             width: 100%;
             text-align: center;
+            transition: background-color 0.3s;
+        }
+
+        .action-btn:hover {
+            background-color: #ADD8E6; /* Medium blue background color */
+        }
+
+        .middle-side {
+            width: 50%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .right-side {
+            width: 25%;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+            overflow-y: auto;
+        }
+
+        .pdf-viewer-container {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .right-results-container {
+            width: 100%;
+            background-color: #ADD8E6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 50px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            box-sizing: border-box;
         }
 
         .analysis-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 12px;
+            background-color: #ADD8E6;
+            border: 2px solid #545b62; /* Dark grey border */
         }
 
         .analysis-table th, .analysis-table td {
-            border: 1px solid #ccc;
+            border: 1px solid #545b62; /* Dark grey table outline */
             padding: 8px;
             text-align: left;
         }
@@ -111,37 +171,36 @@
             color: #545b62;
         }
 
-        .form-group {
-            margin-bottom: 10px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: bold;
-            color: #545b62;
-            font-size: 12px;
-        }
-
-        .form-group input, .form-group textarea {
+        .analysis-table input[type="text"] {
             width: 100%;
-            padding: 8px;
+            padding: 4px;
             box-sizing: border-box;
-            font-size: 12px;
-        }
-
-        .scroll-box {
-            width: 100%;
-            height: 50px;
-            overflow-y: auto;
             border: 1px solid #ccc;
-            padding: 8px;
-            box-sizing: border-box;
             font-size: 12px;
-            background-color: white;
         }
 
         h3 {
             color: #545b62;
+            background-color: #ADD8E6;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .left-side, .middle-side, .right-side {
+                width: 100%;
+                padding: 5px;
+            }
+
+            .right-results-container {
+                margin-top: 10px;
+                padding: 5px;
+            }
         }
     </style>
 </head>
@@ -149,20 +208,7 @@
     <div class="container">
         <div class="left-side">
             <img src="{{ url_for('static', filename='images/HERA2.png') }}" alt="HERA Logo" class="logo-left">
-            <div class="button-container">
-                <button id="compliantBtn" class="status-btn compliant" data-type="compliant">Compliant</button>
-                <button id="nonCompliantBtn" class="status-btn non-compliant" data-type="noncompliant">Non-Compliant</button>
-                <button id="exportBtn" class="action-btn">Export</button>
-            </div>
-        </div>
-        <div class="middle-side">
-            <div class="pdf-viewer-container">
-                <iframe id="pdfViewer" class="pdf-viewer" src="{{ pdf }}" frameborder="0"></iframe>
-            </div>
-        </div>
-        <div class="right-side">
-            <div class="results-container" id="resultsContainer">
-                <h3>Results</h3>
+            <div class="left-results-container">
                 <div class="form-group">
                     <label for="manufacturer">Manufacturer</label>
                     <input type="text" id="manufacturer" value="{{ data.manufacturer }}">
@@ -187,6 +233,20 @@
                     <label for="materials_heat_no">Materials (Heat No.)</label>
                     <div class="scroll-box" id="materials_heat_no">{{ data.materials_heat_no }}</div>
                 </div>
+            </div>
+            <div class="button-container">
+                <button id="compliantBtn" class="status-btn compliant" data-type="compliant">Compliant</button>
+                <button id="nonCompliantBtn" class="status-btn non-compliant" data-type="noncompliant">Non-Compliant</button>
+                <button id="exportBtn" class="action-btn">Export</button>
+            </div>
+        </div>
+        <div class="middle-side">
+            <div class="pdf-viewer-container">
+                <iframe id="pdfViewer" class="pdf-viewer" src="{{ pdf }}" frameborder="0"></iframe>
+            </div>
+        </div>
+        <div class="right-side">
+            <div class="right-results-container" id="resultsContainer">
                 <h3>Chemical Analysis</h3>
                 <table class="analysis-table" id="chemicalTable">
                     <thead>
@@ -200,47 +260,37 @@
                         <tr>
                             <td>Carbon</td>
                             <td>C</td>
-                            <td id="C"></td>
+                            <td><input type="text" id="C" readonly></td>
                         </tr>
                         <tr>
-                            <td>Magnesium</td>
+                            <td>Manganese</td>
                             <td>Mn</td>
-                            <td id="Mn"></td>
-                        </tr>
-                        <tr>
-                            <td>Phosphorus</td>
-                            <td>P</td>
-                            <td id="P"></td>
-                        </tr>
-                        <tr>
-                            <td>Sulfur</td>
-                            <td>S</td>
-                            <td id="S"></td>
-                        </tr>
-                        <tr>
-                            <td>Silicon</td>
-                            <td>Si</td>
-                            <td id="Si"></td>
+                            <td><input type="text" id="Mn" readonly></td>
                         </tr>
                         <tr>
                             <td>Chromium</td>
                             <td>Cr</td>
-                            <td id="Cr"></td>
+                            <td><input type="text" id="Cr" readonly></td>
                         </tr>
                         <tr>
                             <td>Molybdenum</td>
                             <td>Mo</td>
-                            <td id="Mo"></td>
+                            <td><input type="text" id="Mo" readonly></td>
+                        </tr>
+                        <tr>
+                            <td>Vanadium</td>
+                            <td>V</td>
+                            <td><input type="text" id="V" readonly></td>
                         </tr>
                         <tr>
                             <td>Nickel</td>
                             <td>Ni</td>
-                            <td id="Ni"></td>
+                            <td><input type="text" id="Ni" readonly></td>
                         </tr>
                         <tr>
                             <td>Copper</td>
                             <td>Cu</td>
-                            <td id="Cu"></td>
+                            <td><input type="text" id="Cu" readonly></td>
                         </tr>
                     </tbody>
                 </table>
@@ -257,17 +307,17 @@
                         <tr>
                             <td>Yield strength</td>
                             <td>MPa</td>
-                            <td id="Yield_strength"></td>
+                            <td><input type="text" id="Yield_strength" readonly></td>
                         </tr>
                         <tr>
                             <td>Ultimate tensile</td>
                             <td>MPa</td>
-                            <td id="Ultimate_tensile"></td>
+                            <td><input type="text" id="Ultimate_tensile" readonly></td>
                         </tr>
                         <tr>
                             <td>Elongation</td>
                             <td>%</td>
-                            <td id="Elongation"></td>
+                            <td><input type="text" id="Elongation" readonly></td>
                         </tr>
                     </tbody>
                 </table>
@@ -286,6 +336,7 @@
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
+                console.log("PDF URL set to:", pdfUrl);
             } else {
                 console.error("No PDF URL found in query parameters");
             }
@@ -294,45 +345,20 @@
                 fetch(resultUrl)
                     .then(response => response.json())
                     .then(data => {
-                        document.getElementById('manufacturer').value = data.manufacturer || '';
-                        document.getElementById('certificate_number').value = data.certificate_number || '';
-                        document.getElementById('material_standard').value = data.material_standard || '';
-                        document.getElementById('material_grade').value = data.material_grade || '';
-                        document.getElementById('description').value = data.description || '';
-                        document.getElementById('materials_heat_no').innerText = data.materials_heat_no || '';
+                        // Populate the chemical analysis table
+                        for (const element in data.chemical_analysis) {
+                            document.getElementById(element).value = data.chemical_analysis[element];
+                        }
 
-                        const chemicalElements = ['C', 'Mn', 'P', 'S', 'Si', 'Cr', 'Mo', 'Ni', 'Cu'];
-                        chemicalElements.forEach(element => {
-                            document.getElementById(element).innerText = data.chemical_analysis[element] || '';
-                        });
-
-                        const mechanicalProperties = ['Yield_strength', 'Ultimate_tensile', 'Elongation'];
-                        mechanicalProperties.forEach(property => {
-                            document.getElementById(property).innerText = data.mechanical_analysis[property] || '';
-                        });
+                        // Populate the mechanical analysis table
+                        document.getElementById('Yield_strength').value = data.mechanical_analysis['Yield strength'];
+                        document.getElementById('Ultimate_tensile').value = data.mechanical_analysis['Ultimate tensile'];
+                        document.getElementById('Elongation').value = data.mechanical_analysis['Elongation'];
                     })
                     .catch(error => console.error('Error:', error));
             } else {
                 console.error("No result found in query parameters");
             }
-
-            const compliantBtn = document.getElementById('compliantBtn');
-            const nonCompliantBtn = document.getElementById('nonCompliantBtn');
-            const exportBtn = document.getElementById('exportBtn');
-
-            compliantBtn.addEventListener('click', function() {
-                compliantBtn.classList.add('active');
-                nonCompliantBtn.classList.remove('active');
-            });
-
-            nonCompliantBtn.addEventListener('click', function() {
-                nonCompliantBtn.classList.add('active');
-                compliantBtn.classList.remove('active');
-            });
-
-            exportBtn.addEventListener('click', function() {
-                alert('Export functionality not implemented yet.');
-            });
         });
     </script>
 </body>
