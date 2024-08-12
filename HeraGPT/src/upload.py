@@ -1,67 +1,89 @@
-from flask import Flask, request, redirect, url_for, flash, render_template, send_from_directory, jsonify
 import os
-from werkzeug.utils import secure_filename
-import mimetypes
-from load_env import load_env
-from pdfminer.high_level import extract_text
-import json
 import re
+import mimetypes
+import json
+import pdfplumber
+from flask import Flask, request, redirect, url_for, flash, render_template, send_from_directory, jsonify
+from werkzeug.utils import secure_filename
 from urllib.parse import urlparse, unquote
 
-# Load environment variables
-load_env('../.env')
-
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY')
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
+app.secret_key = "your_secret_key_here"
+UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {'pdf'}
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def extract_text_from_pdf(pdf_path):
-    text = extract_text(pdf_path)
+    text = ""
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text()
     return text
+
+def save_text_to_file(text, filename):
+    txt_filename = filename.replace('.pdf', '.txt')
+    txt_path = os.path.join(UPLOAD_FOLDER, txt_filename)
+    with open(txt_path, 'w') as f:
+        f.write(text)
+    return txt_path
 
 def extract_data(text):
     data = {
-        'manufacturer': extract_value(r'Manufacturer:\s*(.+)', text),
-        'certificate_number': extract_value(r'Certificate number:\s*(.+)', text),
-        'material_standard': extract_value(r'Material Standard:\s*(.+)', text),
-        'material_grade': extract_value(r'Material Grade:\s*(.+)', text),
-        'description': extract_value(r'Description:\s*(.+)', text),
+        'manufacturer': extract_value(r'Customer:\s*(.+?)\s+Supplier:', text),
+        'certificate_number': extract_value(r'Certificate No\.\s*:\s*(\d+)', text),
+        'item_number': extract_value(r'Item\s+No\s*(\S+)', text),
+        'materials_heat_no': extract_value(r'Heat\s+No\s*(\S+)', text),
+        'material_section': extract_value(r'Section\s*(.+?)\s+Grade', text),
+        'material_grade': extract_value(r'Grade\s*([A-Za-z0-9\- ]+)', text),
         'chemical_analysis': extract_elements(text),
-        'mechanical_analysis': extract_mechanical(text)
+        'mechanical_analysis': extract_mechanical(text),
+        'comments': extract_comments(text)
     }
     return data
 
 def extract_value(pattern, text):
-    match = re.search(pattern, text)
+    match = re.search(pattern, text, re.IGNORECASE)
     if match:
-        return match.group(1)
+        return match.group(1).strip()
     return ''
 
 def extract_elements(text):
-    elements = ['C', 'Mn', 'P', 'S', 'Si', 'Cr', 'Mo', 'Ni', 'Cu']
-    data = {}
-    for element in elements:
-        match = re.search(rf'\b{element}\b\s*[:=]?\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
-        if match:
-            data[element] = {'symbol': element, 'percentage': float(match.group(1))}
-    return data
+    elements_data = {}
+    chemical_section = re.search(r'CHEMICAL ANALYSIS(.*?)MECHANICAL TESTING', text, re.DOTALL | re.IGNORECASE)
+    if chemical_section:
+        matches = re.findall(r'\b([A-Z][a-z]?)\b\s+(\.\d+|\d+\.\d+)', chemical_section.group(1))
+        for match in matches:
+            element_symbol, percentage = match
+            elements_data[element_symbol] = {'symbol': element_symbol, 'percentage': percentage}
+    return elements_data
 
 def extract_mechanical(text):
-    mechanical_properties = ['Yield strength', 'Ultimate tensile', 'Elongation']
-    data = {}
-    for property in mechanical_properties:
-        match = re.search(rf'{property}:\s*(\d+(\.\d+)?)', text, re.IGNORECASE)
-        if match:
-            data[property] = {'unit': 'MPa' if 'strength' in property else '%', 'result': float(match.group(1))}
-    return data
+    mechanical_data = {}
+    mechanical_section = re.search(r'MECHANICAL TESTING(.*?)BUNDLES', text, re.DOTALL | re.IGNORECASE)
+    if mechanical_section:
+        ys_match = re.search(r'YS\s+MPa\s+(\d+)', mechanical_section.group(1))
+        uts_match = re.search(r'UTS\s+MPa\s+(\d+)', mechanical_section.group(1))
+        elongn_match = re.search(r'ELONGN\s+\%\s+(\d+)', mechanical_section.group(1))
+        
+        if ys_match:
+            mechanical_data['YS'] = {'unit': 'MPa', 'result': ys_match.group(1)}
+        if uts_match:
+            mechanical_data['UTS'] = {'unit': 'MPa', 'result': uts_match.group(1)}
+        if elongn_match:
+            mechanical_data['ELONGN'] = {'unit': '%', 'result': elongn_match.group(1)}
+    return mechanical_data
+
+def extract_comments(text):
+    comments_section = re.search(r'COMMENTS(.*?)(To view Measurement Uncertainty|GDTI|TEST CERTIFICATE|Page\s+\d+|\Z)', text, re.DOTALL)
+    if comments_section:
+        return comments_section.group(1).strip()
+    return ''
 
 @app.route('/')
 def index():
@@ -110,11 +132,9 @@ def extract():
 def process_extraction():
     pdf_url = request.args.get('pdf')
     
-    # Extract the filename from the URL
     parsed_url = urlparse(pdf_url)
     pdf_path = unquote(parsed_url.path)
     
-    # Ensure the path is relative and points to the correct uploads folder
     if pdf_path.startswith('/'):
         pdf_path = pdf_path[1:]
 
@@ -123,16 +143,18 @@ def process_extraction():
     if not pdf_full_path or not os.path.isfile(pdf_full_path):
         return "File not found", 404
 
-    # Extract text from the uploaded PDF
     pdf_content = extract_text_from_pdf(pdf_full_path)
 
     if not pdf_content:
         return "Failed to extract text from the certificate PDF.", 500
 
+    # Save the extracted text to a file for reference
+    txt_path = save_text_to_file(pdf_content, os.path.basename(pdf_full_path))
+    print(f"Text extracted and saved to {txt_path}")
+
     # Extract data
     extracted_data = extract_data(pdf_content)
 
-    # Save the result to a JSON file
     result_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.basename(pdf_path)}_result.json")
     with open(result_path, 'w') as f:
         json.dump(extracted_data, f, indent=4)

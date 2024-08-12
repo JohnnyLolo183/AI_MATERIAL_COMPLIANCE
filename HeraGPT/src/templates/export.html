@@ -29,7 +29,7 @@
 
         .left-results-container {
             width: 90%;
-            margin-top: 110px; /* Space between the logo and the headings */
+            margin-top: 110px;
             background-color: #ADD8E6;
             padding: 10px;
             border-radius: 5px;
@@ -110,7 +110,7 @@
         }
 
         .action-btn:hover {
-            background-color: #ADD8E6; /* Medium blue background color */
+            background-color: #ADD8E6;
         }
 
         .middle-side {
@@ -157,11 +157,11 @@
             border-collapse: collapse;
             font-size: 12px;
             background-color: #ADD8E6;
-            border: 2px solid #545b62; /* Dark grey border */
+            border: 2px solid #545b62;
         }
 
         .analysis-table th, .analysis-table td {
-            border: 1px solid #545b62; /* Dark grey table outline */
+            border: 1px solid #545b62;
             padding: 8px;
             text-align: left;
         }
@@ -218,20 +218,20 @@
                     <input type="text" id="certificate_number" value="{{ data.certificate_number }}">
                 </div>
                 <div class="form-group">
-                    <label for="material_standard">Material Standard</label>
-                    <input type="text" id="material_standard" value="{{ data.material_standard }}">
+                    <label for="item_number">Item Number</label>
+                    <input type="text" id="item_number" value="{{ data.item_number }}">
+                </div>
+                <div class="form-group">
+                    <label for="material_section">Material Section</label>
+                    <input type="text" id="material_section" value="{{ data.material_section }}">
                 </div>
                 <div class="form-group">
                     <label for="material_grade">Material Grade</label>
                     <input type="text" id="material_grade" value="{{ data.material_grade }}">
                 </div>
                 <div class="form-group">
-                    <label for="description">Description</label>
-                    <input type="text" id="description" value="{{ data.description }}">
-                </div>
-                <div class="form-group">
                     <label for="materials_heat_no">Materials (Heat No.)</label>
-                    <div class="scroll-box" id="materials_heat_no">{{ data.materials_heat_no }}</div>
+                    <input type="text" id="materials_heat_no" value="{{ data.materials_heat_no }}">
                 </div>
             </div>
             <div class="button-container">
@@ -266,6 +266,16 @@
                             <td>Manganese</td>
                             <td>Mn</td>
                             <td><input type="text" id="Mn" readonly></td>
+                        </tr>
+                        <tr>
+                            <td>Phosphorus</td>
+                            <td>P</td>
+                            <td><input type="text" id="P" readonly></td>
+                        </tr>
+                        <tr>
+                            <td>Sulfur</td>
+                            <td>S</td>
+                            <td><input type="text" id="S" readonly></td>
                         </tr>
                         <tr>
                             <td>Chromium</td>
@@ -305,25 +315,25 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Yield strength</td>
+                            <td>Yield Strength</td>
                             <td>MPa</td>
-                            <td><input type="text" id="Yield_strength" readonly></td>
+                            <td><input type="text" id="YS" readonly></td>
                         </tr>
                         <tr>
-                            <td>Ultimate tensile</td>
+                            <td>Ultimate Tensile</td>
                             <td>MPa</td>
-                            <td><input type="text" id="Ultimate_tensile" readonly></td>
+                            <td><input type="text" id="UTS" readonly></td>
                         </tr>
                         <tr>
                             <td>Elongation</td>
                             <td>%</td>
-                            <td><input type="text" id="Elongation" readonly></td>
+                            <td><input type="text" id="ELONGN" readonly></td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="form-group">
                     <label for="comments">Comments</label>
-                    <textarea id="comments" rows="4"></textarea>
+                    <textarea id="comments" class="scroll-box" rows="4">{{ data.comments }}</textarea>
                 </div>
             </div>
         </div>
@@ -336,7 +346,6 @@
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
-                console.log("PDF URL set to:", pdfUrl);
             } else {
                 console.error("No PDF URL found in query parameters");
             }
@@ -347,13 +356,22 @@
                     .then(data => {
                         // Populate the chemical analysis table
                         for (const element in data.chemical_analysis) {
-                            document.getElementById(element).value = data.chemical_analysis[element];
+                            document.getElementById(element).value = data.chemical_analysis[element].percentage;
                         }
 
                         // Populate the mechanical analysis table
-                        document.getElementById('Yield_strength').value = data.mechanical_analysis['Yield strength'];
-                        document.getElementById('Ultimate_tensile').value = data.mechanical_analysis['Ultimate tensile'];
-                        document.getElementById('Elongation').value = data.mechanical_analysis['Elongation'];
+                        document.getElementById('YS').value = data.mechanical_analysis['YS'].result;
+                        document.getElementById('UTS').value = data.mechanical_analysis['UTS'].result;
+                        document.getElementById('ELONGN').value = data.mechanical_analysis['ELONGN'].result;
+
+                        // Populate the other form fields
+                        document.getElementById('manufacturer').value = data.manufacturer;
+                        document.getElementById('certificate_number').value = data.certificate_number;
+                        document.getElementById('item_number').value = data.item_number;
+                        document.getElementById('material_section').value = data.material_section;
+                        document.getElementById('material_grade').value = data.material_grade;
+                        document.getElementById('materials_heat_no').value = data.materials_heat_no;
+                        document.getElementById('comments').value = data.comments;
                     })
                     .catch(error => console.error('Error:', error));
             } else {
