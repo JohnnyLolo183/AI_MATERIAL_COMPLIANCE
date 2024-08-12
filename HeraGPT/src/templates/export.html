@@ -166,6 +166,10 @@
             text-align: left;
         }
 
+        .analysis-table th:nth-child(2) {
+            text-align: center;
+        }
+
         .analysis-table th {
             background-color: #f2f2f2;
             color: #545b62;
@@ -211,27 +215,27 @@
             <div class="left-results-container">
                 <div class="form-group">
                     <label for="manufacturer">Manufacturer</label>
-                    <input type="text" id="manufacturer" value="{{ data.manufacturer }}">
+                    <input type="text" id="manufacturer" value="">
                 </div>
                 <div class="form-group">
                     <label for="certificate_number">Certificate Number</label>
-                    <input type="text" id="certificate_number" value="{{ data.certificate_number }}">
+                    <input type="text" id="certificate_number" value="">
                 </div>
                 <div class="form-group">
                     <label for="item_number">Item Number</label>
-                    <input type="text" id="item_number" value="{{ data.item_number }}">
+                    <input type="text" id="item_number" value="">
                 </div>
                 <div class="form-group">
                     <label for="material_section">Material Section</label>
-                    <input type="text" id="material_section" value="{{ data.material_section }}">
+                    <input type="text" id="material_section" value="">
                 </div>
                 <div class="form-group">
                     <label for="material_grade">Material Grade</label>
-                    <input type="text" id="material_grade" value="{{ data.material_grade }}">
+                    <input type="text" id="material_grade" value="">
                 </div>
                 <div class="form-group">
                     <label for="materials_heat_no">Materials (Heat No.)</label>
-                    <input type="text" id="materials_heat_no" value="{{ data.materials_heat_no }}">
+                    <input type="text" id="materials_heat_no" value="">
                 </div>
             </div>
             <div class="button-container">
@@ -251,55 +255,45 @@
                 <table class="analysis-table" id="chemicalTable">
                     <thead>
                         <tr>
-                            <th>Elements</th>
-                            <th>Symbol</th>
+                            <th>Element</th>
                             <th>%</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Carbon</td>
-                            <td>C</td>
+                            <td>Carbon (C)</td>
                             <td><input type="text" id="C" readonly></td>
                         </tr>
                         <tr>
-                            <td>Manganese</td>
-                            <td>Mn</td>
+                            <td>Manganese (Mn)</td>
                             <td><input type="text" id="Mn" readonly></td>
                         </tr>
                         <tr>
-                            <td>Phosphorus</td>
-                            <td>P</td>
+                            <td>Phosphorus (P)</td>
                             <td><input type="text" id="P" readonly></td>
                         </tr>
                         <tr>
-                            <td>Sulfur</td>
-                            <td>S</td>
+                            <td>Sulfur (S)</td>
                             <td><input type="text" id="S" readonly></td>
                         </tr>
                         <tr>
-                            <td>Chromium</td>
-                            <td>Cr</td>
+                            <td>Chromium (Cr)</td>
                             <td><input type="text" id="Cr" readonly></td>
                         </tr>
                         <tr>
-                            <td>Molybdenum</td>
-                            <td>Mo</td>
+                            <td>Molybdenum (Mo)</td>
                             <td><input type="text" id="Mo" readonly></td>
                         </tr>
                         <tr>
-                            <td>Vanadium</td>
-                            <td>V</td>
+                            <td>Vanadium (V)</td>
                             <td><input type="text" id="V" readonly></td>
                         </tr>
                         <tr>
-                            <td>Nickel</td>
-                            <td>Ni</td>
+                            <td>Nickel (Ni)</td>
                             <td><input type="text" id="Ni" readonly></td>
                         </tr>
                         <tr>
-                            <td>Copper</td>
-                            <td>Cu</td>
+                            <td>Copper (Cu)</td>
                             <td><input type="text" id="Cu" readonly></td>
                         </tr>
                     </tbody>
@@ -333,7 +327,7 @@
                 </table>
                 <div class="form-group">
                     <label for="comments">Comments</label>
-                    <textarea id="comments" class="scroll-box" rows="4">{{ data.comments }}</textarea>
+                    <textarea id="comments" class="scroll-box" rows="4"></textarea>
                 </div>
             </div>
         </div>
@@ -354,24 +348,30 @@
                 fetch(resultUrl)
                     .then(response => response.json())
                     .then(data => {
+                        // Populate the left-side form fields
+                        document.getElementById('manufacturer').value = data.manufacturer || '';
+                        document.getElementById('certificate_number').value = data.certificate_number || '';
+                        document.getElementById('item_number').value = data.item_number || '';
+                        document.getElementById('material_section').value = data.material_section || '';
+                        document.getElementById('material_grade').value = data.material_grade || '';
+                        document.getElementById('materials_heat_no').value = data.materials_heat_no || '';
+                        document.getElementById('comments').value = data.comments || '';
+
                         // Populate the chemical analysis table
-                        for (const element in data.chemical_analysis) {
-                            document.getElementById(element).value = data.chemical_analysis[element].percentage;
-                        }
+                        document.getElementById('C').value = data.chemical_analysis.C || '';
+                        document.getElementById('Mn').value = data.chemical_analysis.Mn || '';
+                        document.getElementById('P').value = data.chemical_analysis.P || '';
+                        document.getElementById('S').value = data.chemical_analysis.S || '';
+                        document.getElementById('Cr').value = data.chemical_analysis.Cr || '';
+                        document.getElementById('Mo').value = data.chemical_analysis.Mo || '';
+                        document.getElementById('V').value = data.chemical_analysis.V || '';
+                        document.getElementById('Ni').value = data.chemical_analysis.Ni || '';
+                        document.getElementById('Cu').value = data.chemical_analysis.Cu || '';
 
                         // Populate the mechanical analysis table
-                        document.getElementById('YS').value = data.mechanical_analysis['YS'].result;
-                        document.getElementById('UTS').value = data.mechanical_analysis['UTS'].result;
-                        document.getElementById('ELONGN').value = data.mechanical_analysis['ELONGN'].result;
-
-                        // Populate the other form fields
-                        document.getElementById('manufacturer').value = data.manufacturer;
-                        document.getElementById('certificate_number').value = data.certificate_number;
-                        document.getElementById('item_number').value = data.item_number;
-                        document.getElementById('material_section').value = data.material_section;
-                        document.getElementById('material_grade').value = data.material_grade;
-                        document.getElementById('materials_heat_no').value = data.materials_heat_no;
-                        document.getElementById('comments').value = data.comments;
+                        document.getElementById('YS').value = data.mechanical_analysis.YS || '';
+                        document.getElementById('UTS').value = data.mechanical_analysis.UTS || '';
+                        document.getElementById('ELONGN').value = data.mechanical_analysis.ELONGN || '';
                     })
                     .catch(error => console.error('Error:', error));
             } else {

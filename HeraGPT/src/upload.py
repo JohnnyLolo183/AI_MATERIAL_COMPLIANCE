@@ -1,13 +1,11 @@
 import os
 import re
-import mimetypes
-import json
 import pdfplumber
-from flask import Flask, request, redirect, url_for, flash, render_template, send_from_directory, jsonify
+import json
+from flask import Flask, request, redirect, url_for, render_template, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 from urllib.parse import urlparse, unquote
 
-# Initialize Flask app
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
 UPLOAD_FOLDER = "uploads"
@@ -19,32 +17,37 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def extract_text_from_pdf(pdf_path):
-    text = ""
+def extract_data_from_pdf(pdf_path):
+    data = {}
     with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text()
-    return text
+        full_text = ''
+        for page_num, page in enumerate(pdf.pages, start=1):
+            page_text = page.extract_text()
+            full_text += page_text
+            print(f"Page {page_num} Text: {page_text}")
 
-def save_text_to_file(text, filename):
-    txt_filename = filename.replace('.pdf', '.txt')
-    txt_path = os.path.join(UPLOAD_FOLDER, txt_filename)
-    with open(txt_path, 'w') as f:
-        f.write(text)
-    return txt_path
+        # Extracting specific values
+        data['manufacturer'] = extract_value(r'Customer:\s*(.+?)\s+Supplier:', full_text)
+        data['certificate_number'] = extract_value(r'Certificate No\.\s*:\s*([A-Za-z0-9\-]+)', full_text)
+        
+        items_section = re.search(r'ITEMS COVERED BY THIS TEST CERTIFICATE(.*?)CHEMICAL ANALYSIS', full_text, re.DOTALL)
+        if items_section:
+            items_text = items_section.group(1).strip()
+            data.update(extract_items_covered(items_text))
 
-def extract_data(text):
-    data = {
-        'manufacturer': extract_value(r'Customer:\s*(.+?)\s+Supplier:', text),
-        'certificate_number': extract_value(r'Certificate No\.\s*:\s*(\d+)', text),
-        'item_number': extract_value(r'Item\s+No\s*(\S+)', text),
-        'materials_heat_no': extract_value(r'Heat\s+No\s*(\S+)', text),
-        'material_section': extract_value(r'Section\s*(.+?)\s+Grade', text),
-        'material_grade': extract_value(r'Grade\s*([A-Za-z0-9\- ]+)', text),
-        'chemical_analysis': extract_elements(text),
-        'mechanical_analysis': extract_mechanical(text),
-        'comments': extract_comments(text)
-    }
+        chemical_section = re.search(r'CHEMICAL ANALYSIS(.*?)MECHANICAL TESTING', full_text, re.DOTALL)
+        if chemical_section:
+            chemical_text = chemical_section.group(1).strip()
+            data['chemical_analysis'] = extract_chemical_analysis(chemical_text)
+
+        mechanical_section = re.search(r'MECHANICAL TESTING(.*?)BUNDLES', full_text, re.DOTALL)
+        if mechanical_section:
+            mechanical_text = mechanical_section.group(1).strip()
+            data['mechanical_analysis'] = extract_mechanical_analysis(mechanical_text)
+
+        data['comments'] = extract_comments(full_text)
+
+    print("Final Extracted data:", data)
     return data
 
 def extract_value(pattern, text):
@@ -53,30 +56,42 @@ def extract_value(pattern, text):
         return match.group(1).strip()
     return ''
 
-def extract_elements(text):
-    elements_data = {}
-    chemical_section = re.search(r'CHEMICAL ANALYSIS(.*?)MECHANICAL TESTING', text, re.DOTALL | re.IGNORECASE)
-    if chemical_section:
-        matches = re.findall(r'\b([A-Z][a-z]?)\b\s+(\.\d+|\d+\.\d+)', chemical_section.group(1))
-        for match in matches:
-            element_symbol, percentage = match
-            elements_data[element_symbol] = {'symbol': element_symbol, 'percentage': percentage}
-    return elements_data
+def extract_items_covered(text):
+    items = {}
+    match = re.search(
+        r'Item\s+No\s+(\S+)\s+Heat\s+No\s+(\S+)\s+Customer\s+Order\s+(\S+)\s+(.+?)\s+Grade\s+(.+)',
+        text, re.IGNORECASE
+    )
+    if match:
+        items['item_number'] = match.group(1)
+        items['materials_heat_no'] = match.group(2)
+        items['customer_order'] = match.group(3)
+        items['material_section'] = match.group(4).strip()
+        items['material_grade'] = match.group(5).strip()
+    return items
 
-def extract_mechanical(text):
+def extract_chemical_analysis(text):
+    chemical_data = {}
+    chemical_elements = ["C", "Mn", "P", "S", "Ni", "Cr", "Mo", "Cu", "Al", "Nb", "Ti", "B", "V"]
+    for element in chemical_elements:
+        match = re.search(rf'{element}\s*(\.\d+|\d+\.\d+|\d+)', text)
+        if match:
+            chemical_data[element] = match.group(1)
+    return chemical_data
+
+def extract_mechanical_analysis(text):
     mechanical_data = {}
-    mechanical_section = re.search(r'MECHANICAL TESTING(.*?)BUNDLES', text, re.DOTALL | re.IGNORECASE)
-    if mechanical_section:
-        ys_match = re.search(r'YS\s+MPa\s+(\d+)', mechanical_section.group(1))
-        uts_match = re.search(r'UTS\s+MPa\s+(\d+)', mechanical_section.group(1))
-        elongn_match = re.search(r'ELONGN\s+\%\s+(\d+)', mechanical_section.group(1))
-        
-        if ys_match:
-            mechanical_data['YS'] = {'unit': 'MPa', 'result': ys_match.group(1)}
-        if uts_match:
-            mechanical_data['UTS'] = {'unit': 'MPa', 'result': uts_match.group(1)}
-        if elongn_match:
-            mechanical_data['ELONGN'] = {'unit': '%', 'result': elongn_match.group(1)}
+    match_ys = re.search(r'YS\s+(\d+)\s+MPa', text)
+    match_uts = re.search(r'UTS\s+(\d+)\s+MPa', text)
+    match_elongn = re.search(r'ELONGN\s+(\d+)\s+\%', text)
+    
+    if match_ys:
+        mechanical_data['YS'] = match_ys.group(1)
+    if match_uts:
+        mechanical_data['UTS'] = match_uts.group(1)
+    if match_elongn:
+        mechanical_data['ELONGN'] = match_elongn.group(1)
+    
     return mechanical_data
 
 def extract_comments(text):
@@ -109,12 +124,6 @@ def upload_file():
 
         file.save(file_path)
 
-        mime_type, _ = mimetypes.guess_type(file_path)
-        if mime_type != 'application/pdf':
-            os.remove(file_path)
-            flash('Uploaded file is not a PDF.')
-            return jsonify({'error': 'Uploaded file is not a PDF.'}), 400
-
         return jsonify({'result': True, 'pdfUrl': url_for('uploaded_file', filename=filename, _external=True)})
 
     return jsonify({'error': 'Invalid file type'}), 400
@@ -143,18 +152,10 @@ def process_extraction():
     if not pdf_full_path or not os.path.isfile(pdf_full_path):
         return "File not found", 404
 
-    pdf_content = extract_text_from_pdf(pdf_full_path)
+    # Extract data directly from the PDF
+    extracted_data = extract_data_from_pdf(pdf_full_path)
 
-    if not pdf_content:
-        return "Failed to extract text from the certificate PDF.", 500
-
-    # Save the extracted text to a file for reference
-    txt_path = save_text_to_file(pdf_content, os.path.basename(pdf_full_path))
-    print(f"Text extracted and saved to {txt_path}")
-
-    # Extract data
-    extracted_data = extract_data(pdf_content)
-
+    # Save the extracted data to a JSON file
     result_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.basename(pdf_path)}_result.json")
     with open(result_path, 'w') as f:
         json.dump(extracted_data, f, indent=4)
