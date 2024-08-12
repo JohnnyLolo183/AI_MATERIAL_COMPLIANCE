@@ -23,18 +23,15 @@ def extract_data_from_pdf(pdf_path):
         full_text = ''
         for page_num, page in enumerate(pdf.pages, start=1):
             page_text = page.extract_text()
+            page_text = combine_multiline_headers(page_text)
             full_text += page_text
             print(f"Page {page_num} Text: {page_text}")
 
         # Extracting specific values
         data['manufacturer'] = extract_value(r'Customer:\s*(.+?)\s+Supplier:', full_text)
-        data['certificate_number'] = extract_value(r'Certificate No\.\s*:\s*([A-Za-z0-9\-]+)', full_text)
-        
-        items_section = re.search(r'ITEMS COVERED BY THIS TEST CERTIFICATE(.*?)CHEMICAL ANALYSIS', full_text, re.DOTALL)
-        if items_section:
-            items_text = items_section.group(1).strip()
-            data.update(extract_items_covered(items_text))
+        data['certificate_number'] = extract_value(r'Certificate No\.\s*:\s*([A-Za-z0-9]+)', full_text)
 
+        # Process sections
         chemical_section = re.search(r'CHEMICAL ANALYSIS(.*?)MECHANICAL TESTING', full_text, re.DOTALL)
         if chemical_section:
             chemical_text = chemical_section.group(1).strip()
@@ -50,48 +47,44 @@ def extract_data_from_pdf(pdf_path):
     print("Final Extracted data:", data)
     return data
 
+def combine_multiline_headers(text):
+    combined = re.sub(r'(\b[A-Z][a-z]*\b)\n(\b[A-Z][a-z]*\b)', r'\1 \2', text)
+    return combined
+
 def extract_value(pattern, text):
     match = re.search(pattern, text, re.IGNORECASE)
     if match:
         return match.group(1).strip()
     return ''
 
-def extract_items_covered(text):
-    items = {}
-    match = re.search(
-        r'Item\s+No\s+(\S+)\s+Heat\s+No\s+(\S+)\s+Customer\s+Order\s+(\S+)\s+(.+?)\s+Grade\s+(.+)',
-        text, re.IGNORECASE
-    )
-    if match:
-        items['item_number'] = match.group(1)
-        items['materials_heat_no'] = match.group(2)
-        items['customer_order'] = match.group(3)
-        items['material_section'] = match.group(4).strip()
-        items['material_grade'] = match.group(5).strip()
-    return items
-
 def extract_chemical_analysis(text):
     chemical_data = {}
-    chemical_elements = ["C", "Mn", "P", "S", "Ni", "Cr", "Mo", "Cu", "Al", "Nb", "Ti", "B", "V"]
-    for element in chemical_elements:
-        match = re.search(rf'{element}\s*(\.\d+|\d+\.\d+|\d+)', text)
-        if match:
-            chemical_data[element] = match.group(1)
+    matches = re.findall(r'(\b[C|Mn|P|S|Ni|Cr|Mo|Cu|Al|Nb|Ti|B|V]\b)\s*(\d+\.\d+|\.\d+)', text)
+    for match in matches:
+        element_symbol, percentage = match
+        chemical_data[element_symbol] = percentage
     return chemical_data
 
 def extract_mechanical_analysis(text):
-    mechanical_data = {}
-    match_ys = re.search(r'YS\s+(\d+)\s+MPa', text)
-    match_uts = re.search(r'UTS\s+(\d+)\s+MPa', text)
-    match_elongn = re.search(r'ELONGN\s+(\d+)\s+\%', text)
+    mechanical_data = []
+    pattern = r'Item\s+Heat\s+NATA\s+Cat\s+YS\s+UTS\s+Lo\s+ELONGN\s+No\s+No\s+Lab\s+MPa\s+MPa\s+%\n(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(\S+)'
+    matches = re.findall(pattern, text)
     
-    if match_ys:
-        mechanical_data['YS'] = match_ys.group(1)
-    if match_uts:
-        mechanical_data['UTS'] = match_uts.group(1)
-    if match_elongn:
-        mechanical_data['ELONGN'] = match_elongn.group(1)
-    
+    for match in matches:
+        item_data = {
+            'item_no': match[0],
+            'heat_no': match[1],
+            'lab_no': match[2],
+            'cat': match[3],
+            'ys': int(match[4]),
+            'uts': int(match[5]),
+            'lo': match[6],
+            'elongn': int(match[7]),
+            'mpa1': int(match[8]),
+            'mpa2': int(match[9]),
+            'lab_result': match[10]
+        }
+        mechanical_data.append(item_data)
     return mechanical_data
 
 def extract_comments(text):

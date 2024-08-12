@@ -215,27 +215,27 @@
             <div class="left-results-container">
                 <div class="form-group">
                     <label for="manufacturer">Manufacturer</label>
-                    <input type="text" id="manufacturer" value="">
+                    <input type="text" id="manufacturer" value="{{ data.manufacturer }}">
                 </div>
                 <div class="form-group">
                     <label for="certificate_number">Certificate Number</label>
-                    <input type="text" id="certificate_number" value="">
+                    <input type="text" id="certificate_number" value="{{ data.certificate_number }}">
                 </div>
                 <div class="form-group">
                     <label for="item_number">Item Number</label>
-                    <input type="text" id="item_number" value="">
+                    <input type="text" id="item_number" value="{{ data.item_number }}">
                 </div>
                 <div class="form-group">
                     <label for="material_section">Material Section</label>
-                    <input type="text" id="material_section" value="">
+                    <input type="text" id="material_section" value="{{ data.material_section }}">
                 </div>
                 <div class="form-group">
                     <label for="material_grade">Material Grade</label>
-                    <input type="text" id="material_grade" value="">
+                    <input type="text" id="material_grade" value="{{ data.material_grade }}">
                 </div>
                 <div class="form-group">
                     <label for="materials_heat_no">Materials (Heat No.)</label>
-                    <input type="text" id="materials_heat_no" value="">
+                    <input type="text" id="materials_heat_no" value="{{ data.materials_heat_no }}">
                 </div>
             </div>
             <div class="button-container">
@@ -327,7 +327,7 @@
                 </table>
                 <div class="form-group">
                     <label for="comments">Comments</label>
-                    <textarea id="comments" class="scroll-box" rows="4"></textarea>
+                    <textarea id="comments" class="scroll-box" rows="4">{{ data.comments }}</textarea>
                 </div>
             </div>
         </div>
