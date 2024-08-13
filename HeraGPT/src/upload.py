@@ -7,6 +7,7 @@ from urllib.parse import urlparse, unquote
 from io import StringIO
 from pdfminer.high_level import extract_text_to_fp
 from pdfminer.layout import LAParams
+import spacy
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"
@@ -15,6 +16,9 @@ ALLOWED_EXTENSIONS = {'pdf'}
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
+
+# Load the trained NER model
+nlp = spacy.load("uploads/ner_model")
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -29,11 +33,21 @@ def extract_data_from_pdf(pdf_path):
     # Print the full extracted text for debugging
     print(full_text)
     
-    # Extracting specific values using updated patterns
+    # Regex-based extraction
     data['certificate_number'] = extract_value(r'Certificate No\.\s*:\s*([\w\d]+)', full_text)
     data['manufacturer'] = extract_value(r'Customer:\s*([\w\s&]+)', full_text)
-
-    # Correctly split Section and Grade
+    
+    # Use NER model to fill in the gaps
+    doc = nlp(full_text)
+    for ent in doc.ents:
+        if ent.label_ == "CERTIFICATE_NUMBER" and not data.get('certificate_number'):
+            data['certificate_number'] = ent.text
+        elif ent.label_ == "CUSTOMER" and not data.get('manufacturer'):
+            data['manufacturer'] = ent.text
+        elif ent.label_ == "SUPPLIER" and not data.get('supplier'):
+            data['supplier'] = ent.text
+    
+    # Continue with the rest of the extraction logic
     items_section = re.search(r'ITEMS COVERED BY THIS TEST CERTIFICATE(.*?)CHEMICAL ANALYSIS', full_text, re.DOTALL)
     if items_section:
         items_text = items_section.group(1).strip()
@@ -51,7 +65,17 @@ def extract_data_from_pdf(pdf_path):
 
     data['comments'] = extract_comments(full_text)
 
+    # Handle any missing data
+    data = handle_missing_data(data)
+
     print("Final Extracted data:", data)
+    return data
+
+def handle_missing_data(data):
+    if not data.get('certificate_number'):
+        data['certificate_number'] = "Unknown Certificate Number"
+    if not data.get('manufacturer'):
+        data['manufacturer'] = "Unknown Manufacturer"
     return data
 
 def extract_value(pattern, text, flags=0):
@@ -62,7 +86,6 @@ def extract_value(pattern, text, flags=0):
 
 def extract_items_covered(text):
     items = {}
-    # Extract section and grade correctly
     match = re.search(
         r'Item\s+No\s+(\S+)\s+Heat\s+No\s+(\S+)\s+Customer\s+Order\s+(\S+)\s+([\w\s\.]+)\s+(50MM\sX\s12MM\sS\.E\.\sFLAT)\s+(.+)',
         text, re.IGNORECASE
@@ -79,35 +102,37 @@ def extract_chemical_analysis(text):
     chemical_data = {}
     lines = text.splitlines()
 
+    elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu", "Al-T", "Nb", "Ti", "B", "V"]
+
     for line in lines:
-        # Handle specific chemical elements individually
-        if "C" in line:
-            match = re.search(r'C\s+([\d.]+)', line)
-            if match:
-                chemical_data['C'] = match.group(1)
-        # Repeat for other elements...
-        elif "Mn" in line:
-            match = re.search(r'Mn\s+([\d.]+)', line)
-            if match:
-                chemical_data['Mn'] = match.group(1)
-        # Continue for other elements...
+        if all(elem in line for elem in elements):
+            continue  # Skip the header line
+
+        values = re.findall(r'(\.\d+)', line)  # Updated regex pattern to capture values starting with a period
+        if len(values) == len(elements):
+            for i, element in enumerate(elements):
+                chemical_data[element] = values[i]
+            break  # Exit after extracting the correct line
+        elif len(values) > 0 and len(values) <= len(elements):
+            for i in range(len(values)):
+                chemical_data[elements[i]] = values[i]
 
     return chemical_data
 
-
 def extract_mechanical_analysis(text):
     mechanical_data = {}
-    match_ys = re.search(r'YS\s+([\d.]+)\s+MPa', text)
-    match_uts = re.search(r'UTS\s+([\d.]+)\s+MPa', text)
-    match_elongn = re.search(r'ELONGN\s+([\d.]+)\s+\%', text)
-    
-    if match_ys:
-        mechanical_data['YS'] = match_ys.group(1)
-    if match_uts:
-        mechanical_data['UTS'] = match_uts.group(1)
-    if match_elongn:
-        mechanical_data['ELONGN'] = match_elongn.group(1)
-    
+    lines = text.splitlines()
+
+    properties = ["YS", "UTS", "ELONGN"]
+    units = ["MPa", "MPa", "%"]
+
+    for line in lines:
+        for i, prop in enumerate(properties):
+            if prop in line:
+                match = re.search(rf'{prop}\s+([\d.]+)\s+{units[i]}', line)
+                if match:
+                    mechanical_data[prop] = match.group(1)
+
     return mechanical_data
 
 def extract_comments(text):
@@ -166,10 +191,8 @@ def process_extraction():
     if not pdf_full_path or not os.path.isfile(pdf_full_path):
         return "File not found", 404
 
-    # Extract data directly from the PDF
     extracted_data = extract_data_from_pdf(pdf_full_path)
 
-    # Save the extracted data to a JSON file
     result_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{os.path.basename(pdf_path)}_result.json")
     with open(result_path, 'w') as f:
         json.dump(extracted_data, f, indent=4)

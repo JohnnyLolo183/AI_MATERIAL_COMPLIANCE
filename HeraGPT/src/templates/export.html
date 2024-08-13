@@ -265,16 +265,24 @@
                             <td><input type="text" id="C" readonly></td>
                         </tr>
                         <tr>
-                            <td>Manganese (Mn)</td>
-                            <td><input type="text" id="Mn" readonly></td>
-                        </tr>
-                        <tr>
                             <td>Phosphorus (P)</td>
                             <td><input type="text" id="P" readonly></td>
                         </tr>
                         <tr>
+                            <td>Manganese (Mn)</td>
+                            <td><input type="text" id="Mn" readonly></td>
+                        </tr>
+                        <tr>
+                            <td>Silicon (Si)</td>
+                            <td><input type="text" id="Si" readonly></td>
+                        </tr>
+                        <tr>
                             <td>Sulfur (S)</td>
                             <td><input type="text" id="S" readonly></td>
+                        </tr>
+                        <tr>
+                            <td>Nickel (Ni)</td>
+                            <td><input type="text" id="Ni" readonly></td>
                         </tr>
                         <tr>
                             <td>Chromium (Cr)</td>
@@ -283,14 +291,6 @@
                         <tr>
                             <td>Molybdenum (Mo)</td>
                             <td><input type="text" id="Mo" readonly></td>
-                        </tr>
-                        <tr>
-                            <td>Vanadium (V)</td>
-                            <td><input type="text" id="V" readonly></td>
-                        </tr>
-                        <tr>
-                            <td>Nickel (Ni)</td>
-                            <td><input type="text" id="Ni" readonly></td>
                         </tr>
                         <tr>
                             <td>Copper (Cu)</td>
@@ -359,13 +359,13 @@
 
                         // Populate the chemical analysis table
                         document.getElementById('C').value = data.chemical_analysis.C || '';
-                        document.getElementById('Mn').value = data.chemical_analysis.Mn || '';
                         document.getElementById('P').value = data.chemical_analysis.P || '';
+                        document.getElementById('Mn').value = data.chemical_analysis.Mn || '';
+                        document.getElementById('Si').value = data.chemical_analysis.Si || '';
                         document.getElementById('S').value = data.chemical_analysis.S || '';
+                        document.getElementById('Ni').value = data.chemical_analysis.Ni || '';
                         document.getElementById('Cr').value = data.chemical_analysis.Cr || '';
                         document.getElementById('Mo').value = data.chemical_analysis.Mo || '';
-                        document.getElementById('V').value = data.chemical_analysis.V || '';
-                        document.getElementById('Ni').value = data.chemical_analysis.Ni || '';
                         document.getElementById('Cu').value = data.chemical_analysis.Cu || '';
 
                         // Populate the mechanical analysis table
