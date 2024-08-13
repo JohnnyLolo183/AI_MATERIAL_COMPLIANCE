@@ -62,7 +62,8 @@ body.home-page {
 }
 
 .upload-btn:hover {
-    background-color: #3a3a3a; /* Slightly darker grey for hover effect */
+    background-color: #ADD8E6;
+    color: #545b62
 }
 
 /* New Pages Styles */
@@ -120,7 +121,8 @@ body.new-page {
 }
 
 .action-btn:hover, .home-btn:hover {
-    background-color: #3a3a3a;
+    background-color: #ADD8E6;
+    color: #545b62
 }
 
 .right-side {

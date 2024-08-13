@@ -100,24 +100,26 @@ def extract_items_covered(text):
 
 def extract_chemical_analysis(text):
     chemical_data = {}
-    lines = text.splitlines()
-
     elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu", "Al-T", "Nb", "Ti", "B", "V"]
 
+    lines = text.splitlines()
+
     for line in lines:
-        if all(elem in line for elem in elements):
-            continue  # Skip the header line
-
-        values = re.findall(r'(\.\d+)', line)  # Updated regex pattern to capture values starting with a period
-        if len(values) == len(elements):
-            for i, element in enumerate(elements):
-                chemical_data[element] = values[i]
-            break  # Exit after extracting the correct line
-        elif len(values) > 0 and len(values) <= len(elements):
-            for i in range(len(values)):
-                chemical_data[elements[i]] = values[i]
-
+        # Check for the presence of any known element in the line
+        if any(element in line for element in elements):
+            # Split the line based on spaces to separate elements and values
+            parts = re.split(r'\s+', line.strip())
+            # Extract elements and corresponding values, ensuring that each element is paired with a value
+            for i, part in enumerate(parts):
+                if part in elements and i + 1 < len(parts):
+                    value = parts[i + 1]
+                    # Ensure that the value starts with a period, indicating a valid number
+                    if value.startswith('.'):
+                        chemical_data[part] = value
+                    else:
+                        print(f"Warning: Mismatched element and value for {part} in line: {line}")
     return chemical_data
+
 
 def extract_mechanical_analysis(text):
     mechanical_data = {}
@@ -128,10 +130,10 @@ def extract_mechanical_analysis(text):
 
     for line in lines:
         for i, prop in enumerate(properties):
-            if prop in line:
-                match = re.search(rf'{prop}\s+([\d.]+)\s+{units[i]}', line)
-                if match:
-                    mechanical_data[prop] = match.group(1)
+            # Search for property followed by value and unit
+            match = re.search(rf'{prop}\s+([\d.]+)\s+{units[i]}', line)
+            if match:
+                mechanical_data[prop] = match.group(1)
 
     return mechanical_data
 

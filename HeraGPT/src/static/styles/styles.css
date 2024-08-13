@@ -64,7 +64,8 @@ body.new-page {
 }
 
 .action-btn:hover, .home-btn:hover {
-    background-color: #3a3a3a;
+    background-color: #ADD8E6;
+    color: #545b62
 }
 
 .right-side {
