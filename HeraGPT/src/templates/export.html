@@ -54,9 +54,8 @@
         }
 
         .scroll-box {
-            width: 100%;
-            height: 50px;
             overflow-y: scroll;
+            max-height: 60px; /* Adjust as needed */
             border: 1px solid #ccc;
             padding: 8px;
             box-sizing: border-box;
@@ -223,19 +222,19 @@
                 </div>
                 <div class="form-group">
                     <label for="item_number">Item Number</label>
-                    <input type="text" id="item_number" value="{{ data.item_number }}">
+                    <input type="text" id="item_number" class="scroll-box" value="{{ data.item_number }}">
                 </div>
                 <div class="form-group">
                     <label for="material_section">Material Section</label>
-                    <input type="text" id="material_section" value="{{ data.material_section }}">
+                    <input type="text" id="material_section" class="scroll-box" value="{{ data.material_section }}">
                 </div>
                 <div class="form-group">
                     <label for="material_grade">Material Grade</label>
-                    <input type="text" id="material_grade" value="{{ data.material_grade }}">
+                    <input type="text" id="material_grade" class="scroll-box" value="{{ data.material_grade }}">
                 </div>
                 <div class="form-group">
                     <label for="materials_heat_no">Materials (Heat No.)</label>
-                    <input type="text" id="materials_heat_no" value="{{ data.materials_heat_no }}">
+                    <input type="text" id="materials_heat_no" class="scroll-box" value="{{ data.materials_heat_no }}">
                 </div>
             </div>
             <div class="button-container">
@@ -262,39 +261,39 @@
                     <tbody>
                         <tr>
                             <td>Carbon (C)</td>
-                            <td><input type="text" id="C" readonly></td>
+                            <td><input type="text" id="C" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Phosphorus (P)</td>
-                            <td><input type="text" id="P" readonly></td>
+                            <td><input type="text" id="P" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Manganese (Mn)</td>
-                            <td><input type="text" id="Mn" readonly></td>
+                            <td><input type="text" id="Mn" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Silicon (Si)</td>
-                            <td><input type="text" id="Si" readonly></td>
+                            <td><input type="text" id="Si" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Sulfur (S)</td>
-                            <td><input type="text" id="S" readonly></td>
+                            <td><input type="text" id="S" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Nickel (Ni)</td>
-                            <td><input type="text" id="Ni" readonly></td>
+                            <td><input type="text" id="Ni" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Chromium (Cr)</td>
-                            <td><input type="text" id="Cr" readonly></td>
+                            <td><input type="text" id="Cr" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Molybdenum (Mo)</td>
-                            <td><input type="text" id="Mo" readonly></td>
+                            <td><input type="text" id="Mo" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Copper (Cu)</td>
-                            <td><input type="text" id="Cu" readonly></td>
+                            <td><input type="text" id="Cu" class="scroll-box" readonly></td>
                         </tr>
                     </tbody>
                 </table>
@@ -311,17 +310,17 @@
                         <tr>
                             <td>Yield Strength</td>
                             <td>MPa</td>
-                            <td><input type="text" id="YS" readonly></td>
+                            <td><input type="text" id="YS" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Ultimate Tensile</td>
                             <td>MPa</td>
-                            <td><input type="text" id="UTS" readonly></td>
+                            <td><input type="text" id="UTS" class="scroll-box" readonly></td>
                         </tr>
                         <tr>
                             <td>Elongation</td>
                             <td>%</td>
-                            <td><input type="text" id="ELONGN" readonly></td>
+                            <td><input type="text" id="ELONGN" class="scroll-box" readonly></td>
                         </tr>
                     </tbody>
                 </table>
