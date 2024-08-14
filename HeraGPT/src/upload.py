@@ -23,6 +23,12 @@ nlp = spacy.load("uploads/ner_model")
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def extract_first_line(pattern, text, flags=0):
+    match = re.search(pattern, text, flags)
+    if match:
+        return match.group(1).strip().splitlines()[0]  # Get only the first line
+    return ''
+
 def extract_data_from_pdf(pdf_path):
     data = {}
     output_string = StringIO()
@@ -35,7 +41,7 @@ def extract_data_from_pdf(pdf_path):
     
     # Regex-based extraction
     data['certificate_number'] = extract_value(r'Certificate No\.\s*:\s*([\w\d]+)', full_text)
-    data['manufacturer'] = extract_value(r'Customer:\s*([\w\s&]+)', full_text)
+    data['manufacturer'] = extract_first_line(r'Customer:\s*([\w\s&]+)', full_text)
     
     # Use NER model to fill in the gaps
     doc = nlp(full_text)
@@ -47,21 +53,24 @@ def extract_data_from_pdf(pdf_path):
         elif ent.label_ == "SUPPLIER" and not data.get('supplier'):
             data['supplier'] = ent.text
     
-    # Continue with the rest of the extraction logic
+    # Extract Items Covered section
     items_section = re.search(r'ITEMS COVERED BY THIS TEST CERTIFICATE(.*?)CHEMICAL ANALYSIS', full_text, re.DOTALL)
     if items_section:
         items_text = items_section.group(1).strip()
         data.update(extract_items_covered(items_text))
 
+    # Extract Chemical Analysis
     chemical_section = re.search(r'CHEMICAL ANALYSIS(.*?)MECHANICAL TESTING', full_text, re.DOTALL)
     if chemical_section:
         chemical_text = chemical_section.group(1).strip()
         data['chemical_analysis'] = extract_chemical_analysis(chemical_text)
 
-    mechanical_section = re.search(r'MECHANICAL TESTING(.*?)BUNDLES', full_text, re.DOTALL)
+    # Extract Mechanical Testing
+    mechanical_section = re.search( r'MECHANICAL TESTING(.*?)(Yield Strength|TEST CATEGORY|BUNDLES|COMMENTS|ITEMS COVERED|Page\s+\d+|To view Measurement Uncertainty|$)', full_text, re.DOTALL)
     if mechanical_section:
         mechanical_text = mechanical_section.group(1).strip()
         data['mechanical_analysis'] = extract_mechanical_analysis(mechanical_text)
+
 
     data['comments'] = extract_comments(full_text)
 
@@ -100,40 +109,40 @@ def extract_items_covered(text):
 
 def extract_chemical_analysis(text):
     chemical_data = {}
-    elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu", "Al-T", "Nb", "Ti", "B", "V"]
-
     lines = text.splitlines()
+    
+    elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu"]
+    values = []
 
+    # Extract values that start with a dot (.)
     for line in lines:
-        # Check for the presence of any known element in the line
-        if any(element in line for element in elements):
-            # Split the line based on spaces to separate elements and values
-            parts = re.split(r'\s+', line.strip())
-            # Extract elements and corresponding values, ensuring that each element is paired with a value
-            for i, part in enumerate(parts):
-                if part in elements and i + 1 < len(parts):
-                    value = parts[i + 1]
-                    # Ensure that the value starts with a period, indicating a valid number
-                    if value.startswith('.'):
-                        chemical_data[part] = value
-                    else:
-                        print(f"Warning: Mismatched element and value for {part} in line: {line}")
-    return chemical_data
+        values.extend(re.findall(r'(\.\d+)', line))
 
+    # Align elements with values
+    if len(values) >= len(elements):
+        for i, element in enumerate(elements[:len(values)]):
+            chemical_data[element] = values[i]
+    else:
+        print("Warning: Mismatched elements and values in chemical analysis.")
+
+    return chemical_data
 
 def extract_mechanical_analysis(text):
     mechanical_data = {}
     lines = text.splitlines()
 
+    # Mechanical properties in the order they appear in the certificate
     properties = ["YS", "UTS", "ELONGN"]
-    units = ["MPa", "MPa", "%"]
+    values = []
 
+    # Extract integer values which correspond to the mechanical properties
     for line in lines:
+        values.extend(re.findall(r'\b\d+\b', line))
+
+    # Align properties with values (last three values correspond to YS, UTS, and ELONGN)
+    if len(values) >= 3:
         for i, prop in enumerate(properties):
-            # Search for property followed by value and unit
-            match = re.search(rf'{prop}\s+([\d.]+)\s+{units[i]}', line)
-            if match:
-                mechanical_data[prop] = match.group(1)
+            mechanical_data[prop] = values[-(3 - i)]
 
     return mechanical_data
 
