@@ -3,12 +3,15 @@ require '../vendor/autoload.php'; // Include Composer's autoload file
 require 'load_env.php'; // Include your custom environment loader
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Dotenv\Dotenv;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
-// Load the environment variables
+// Load environment variables
 $envFilePath = __DIR__ . '/.env';
 if (file_exists($envFilePath)) {
     try {
-        loadEnv($envFilePath);
+        Dotenv::createImmutable(__DIR__)->load();
     } catch (Exception $e) {
         echo "Error loading .env file: " . $e->getMessage();
         exit;
@@ -18,9 +21,9 @@ if (file_exists($envFilePath)) {
     exit;
 }
 
-// Function to call Gemini API using cURL
-function callGemini($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey) {
-    $url = 'https://api.gemini.com/v1/chat/completions'; // Replace with Gemini's actual endpoint
+// Function to call Gemini API
+function callGemini($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey, $projectId, $location, $modelId) {
+    $url = "https://gemini.googleapis.com/v1beta1/projects/$projectId/locations/$location/models/$modelId:generateText";
 
     // Prepare a concise prompt with both files' content and ask the AI to provide a compliance check
     $prompt = "Analyze the uploaded steel certificate and NZ Standard file. 
@@ -33,50 +36,43 @@ function callGemini($certificateContent, $standardContent, $certificateFileName,
         \nStandard Content: $standardContent";
 
     $data = [
-        'model' => 'gemini-1.5-pro', // Replace with the correct model name for Gemini
-        'messages' => [
-            ['role' => 'system', 'content' => 'You are a Steel certificate compliance checker.'],
-            ['role' => 'user', 'content' => $prompt],
-        ],
-        'max_tokens' => 4000, // Adjust this as needed
+        'prompt' => $prompt,
+        'maxTokens' => 4000, // Adjust this as needed
+        'temperature' => 0.7 // Optional, adjust as needed
     ];
 
-    $headers = [
-        'Content-Type: application/json',
-        'Authorization: Bearer ' . $apiKey,
-    ];
+    $client = new Client([
+        'headers' => [
+            'Content-Type' => 'application/json',
+            'Authorization' => 'Bearer ' . $apiKey,
+        ]
+    ]);
 
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    $response = curl_exec($ch);
-    $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    if (curl_errno($ch)) {
-        echo 'Curl error: ' . curl_error($ch);
+    try {
+        // Send the request to the Gemini API
+        $response = $client->post($url, [
+            'json' => $data
+        ]);
+
+        // Output the response
+        $response_data = json_decode($response->getBody(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo "JSON decode error: " . json_last_error_msg();
+            exit;
+        }
+
+        // Extracting the required fields from the response
+        $extractedData = [
+            'response' => $response_data['text'] ?? 'No response from Gemini API',
+        ];
+
+        return json_encode($extractedData);
+
+    } catch (RequestException $e) {
+        // Handle error
+        echo "Request failed: " . $e->getMessage();
         exit;
     }
-    curl_close($ch);
-
-    if ($httpcode != 200) {
-        echo "HTTP error code: $httpcode";
-        echo "Response: " . $response;
-        exit;
-    }
-
-    $response_data = json_decode($response, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo "JSON decode error: " . json_last_error_msg();
-        exit;
-    }
-
-    // Extracting the required fields from the response (assuming the response format)
-    $extractedData = [
-        'response' => $response_data['choices'][0]['message']['content'] ?? 'No response from Gemini API',
-    ];
-
-    return json_encode($extractedData);
 }
 
 // Function to extract text from PDF using pdftotext
@@ -148,14 +144,18 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
-    // Retrieve API key directly from environment variables
-    $apiKey = getenv('GEMINI_API_KEY');
-    if (!$apiKey) {
-        echo "API key is not set.";
+    // Retrieve API key and other details directly from environment variables
+    $apiKey = $_ENV['GEMINI_API_KEY'];
+    $projectId = $_ENV['PROJECT_ID'];
+    $location = $_ENV['LOCATION'];
+    $modelId = $_ENV['MODEL_ID'];
+
+    if (!$apiKey || !$projectId || !$location || !$modelId) {
+        echo "API key or other required details are not set.";
         exit;
     }
 
-    $result = callGemini($pdfContent, $standardFile['content'], basename($pdfPath), $standardFile['filename'], $apiKey);
+    $result = callGemini($pdfContent, $standardFile['content'], basename($pdfPath), $standardFile['filename'], $apiKey, $projectId, $location, $modelId);
 
     // Redirect to export.html with the result as a query parameter
     header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
