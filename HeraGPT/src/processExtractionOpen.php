@@ -18,9 +18,9 @@ if (file_exists($envFilePath)) {
     exit;
 }
 
-// Function to call Gemini API using cURL
-function callGemini($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey) {
-    $url = 'https://api.gemini.com/v1/chat/completions'; // Replace with Gemini's actual endpoint
+// Function to call OpenAI API using cURL
+function callOpenAI($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey) {
+    $url = 'https://api.openai.com/v1/chat/completions';
 
     // Prepare a concise prompt with both files' content and ask the AI to provide a compliance check
     $prompt = "Analyze the uploaded steel certificate and NZ Standard file. 
@@ -33,7 +33,7 @@ function callGemini($certificateContent, $standardContent, $certificateFileName,
         \nStandard Content: $standardContent";
 
     $data = [
-        'model' => 'gemini-1.5-pro', // Replace with the correct model name for Gemini
+        'model' => 'gpt-4o',
         'messages' => [
             ['role' => 'system', 'content' => 'You are a Steel certificate compliance checker.'],
             ['role' => 'user', 'content' => $prompt],
@@ -73,7 +73,7 @@ function callGemini($certificateContent, $standardContent, $certificateFileName,
 
     // Extracting the required fields from the response (assuming the response format)
     $extractedData = [
-        'response' => $response_data['choices'][0]['message']['content'] ?? 'No response from Gemini API',
+        'response' => $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API',
     ];
 
     return json_encode($extractedData);
@@ -121,7 +121,7 @@ function readStandardFile($standardName, $directory, $maxLength = 5000) {
     return null;
 }
 
-// Handle Gemini API call
+// Handle OpenAI API call
 if (isset($_GET['pdf'])) {
     $pdfPath = urldecode($_GET['pdf']);
     $pdfContent = extractTextFromPDF($pdfPath);
@@ -149,13 +149,13 @@ if (isset($_GET['pdf'])) {
     }
 
     // Retrieve API key directly from environment variables
-    $apiKey = getenv('GEMINI_API_KEY');
+    $apiKey = getenv('OPENAI_API_KEY');
     if (!$apiKey) {
         echo "API key is not set.";
         exit;
     }
 
-    $result = callGemini($pdfContent, $standardFile['content'], basename($pdfPath), $standardFile['filename'], $apiKey);
+    $result = callOpenAI($pdfContent, $standardFile['content'], basename($pdfPath), $standardFile['filename'], $apiKey);
 
     // Redirect to export.html with the result as a query parameter
     header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
