@@ -3,7 +3,7 @@
         'name' => 'hera-gpt/material-compliance',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'eba0e348a2279776ba7c255fbf3fe193a5b98230',
+        'reference' => '96f407a5b9fef0dc07bbf483b708fa2c32a58283',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'hera-gpt/material-compliance' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'eba0e348a2279776ba7c255fbf3fe193a5b98230',
+            'reference' => '96f407a5b9fef0dc07bbf483b708fa2c32a58283',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
