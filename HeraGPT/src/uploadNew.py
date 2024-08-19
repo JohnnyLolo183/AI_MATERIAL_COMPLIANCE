@@ -40,8 +40,8 @@ def extract_data_from_pdf(pdf_path):
     print(full_text)
     
     # Regex-based extraction
-    data['certificate_number'] = extract_value(r'Certificate No\.\s*:\s*([\w\d]+)', full_text)
-    data['manufacturer'] = extract_first_line(r'Customer:\s*([\w\s&]+)', full_text)
+    data['certificate_number'] = extract_value(r'(Certificate No\.|Test Certificate No\.)\s*:\s*([\w\d]+)', full_text)
+    data['manufacturer'] = extract_first_line(r'(Customer|Supplier):\s*([\w\s&]+)', full_text)
     
     # Use NER model to fill in the gaps
     doc = nlp(full_text)
@@ -53,29 +53,23 @@ def extract_data_from_pdf(pdf_path):
         elif ent.label_ == "SUPPLIER" and not data.get('supplier'):
             data['supplier'] = ent.text
     
-    # Extract Items Covered section
-    items_section = re.search(r'ITEMS COVERED BY THIS TEST CERTIFICATE(.*?)CHEMICAL ANALYSIS', full_text, re.DOTALL)
+    # Extract Items Covered section with flexibility for different headings
+    items_section = re.search(r'(SPEC\. & PROD\. DETAILS COVERED BY THIS TEST CERTIFICATE.*?)(CHEMICAL ANALYSIS|MECHANICAL TESTING)', full_text, re.DOTALL)
     if items_section:
         items_text = items_section.group(1).strip()
-        data.update(extract_items_covered(items_text))
+        data['items_covered'] = extract_items_covered(items_text)
 
     # Extract Chemical Analysis
-    chemical_section = re.search(r'CHEMICAL ANALYSIS(.*?)MECHANICAL TESTING', full_text, re.DOTALL)
+    chemical_section = re.search(r'CHEMICAL ANALYSIS.*?Percentage of element by mass(.*?)MECHANICAL TESTING', full_text, re.DOTALL)
     if chemical_section:
         chemical_text = chemical_section.group(1).strip()
         data['chemical_analysis'] = extract_chemical_analysis(chemical_text)
 
-    # Extract Mechanical Testing
-    mechanical_patterns = [
-        r'MECHANICAL TESTING(.*?)(Yield Strength|TEST CATEGORY|BUNDLES|COMMENTS|ITEMS COVERED|Page\s+\d+|To view Measurement Uncertainty|$)',
-        r'MECHANICAL PROPERTIES(.*?)(Yield Strength|TEST CATEGORY|BUNDLES|COMMENTS|ITEMS COVERED|Page\s+\d+|To view Measurement Uncertainty|$)'
-    ]
-    for pattern in mechanical_patterns:
-        mechanical_section = re.search(pattern, full_text, re.DOTALL)
-        if mechanical_section:
-            mechanical_text = mechanical_section.group(1).strip()
-            data['mechanical_analysis'] = extract_mechanical_analysis(mechanical_text)
-            break
+    # Extract Mechanical Testing (Restored to original logic)
+    mechanical_section = re.search(r'MECHANICAL TESTING(.*?)(Yield Strength|TEST CATEGORY|BUNDLES|COMMENTS|ITEMS COVERED|Page\s+\d+|To view Measurement Uncertainty|$)', full_text, re.DOTALL)
+    if mechanical_section:
+        mechanical_text = mechanical_section.group(1).strip()
+        data['mechanical_analysis'] = extract_mechanical_analysis(mechanical_text)
 
     data['comments'] = extract_comments(full_text)
 
@@ -94,67 +88,70 @@ def handle_missing_data(data):
         data['chemical_analysis'] = {}
     if 'mechanical_analysis' not in data:
         data['mechanical_analysis'] = {}
+    if 'items_covered' not in data:
+        data['items_covered'] = [{
+            'item_number': 'N/A',
+            'materials_heat_no': 'N/A',
+            'material_section': 'N/A',
+            'material_grade': 'N/A'
+        }]
     return data
 
 def extract_value(pattern, text, flags=0):
     match = re.search(pattern, text, flags)
     if match:
-        return match.group(1).strip()
+        return match.group(2).strip()
     return ''
 
 def extract_items_covered(text):
-    items = {}
-    match = re.search(
-        r'Item\s+No\s+(\S+)\s+Heat\s+No\s+(\S+)\s+Customer\s+Order\s+(\S+)\s+([\w\s\.]+)\s+(50MM\sX\s12MM\sS\.E\.\sFLAT)\s+(.+)',
+    items = []
+    match = re.findall(
+        r'Item\s*No\.\s*(\S+)\s+Heat\s*No\.\s*(\S+)\s+Steel Making\s*\S+\s*Customer Order\s*\S+\s*Material Description and Specification\s*([\w\s\.]+)\s*(.*)',
         text, re.IGNORECASE
     )
     if match:
-        items['item_number'] = match.group(1)
-        items['materials_heat_no'] = match.group(2)
-        items['customer_order'] = match.group(3)
-        items['material_section'] = match.group(5).strip()
-        items['material_grade'] = match.group(6).strip()
+        for m in match:
+            item = {
+                'item_number': m[0],
+                'materials_heat_no': m[1],
+                'material_section': m[2].strip() if m[2] else 'N/A',
+                'material_grade': m[3].strip() if m[3] else 'N/A'
+            }
+            items.append(item)
     return items
 
 def extract_chemical_analysis(text):
     chemical_data = {}
     lines = text.splitlines()
     
-    elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu", "Al-T", "Nb", "Ti", "B", "V"]
+    elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu", "Al", "B", "Nb", "Ti", "V"]
     values = []
 
     for line in lines:
         values.extend(re.findall(r'(\.\d+)', line))
 
-    # Align elements with values
     for i, element in enumerate(elements):
-        if i < len(values):
-            chemical_data[element] = values[i]
-        else:
-            chemical_data[element] = "N/A"
+        chemical_data[element] = values[i] if i < len(values) else "N/A"
 
     return chemical_data
 
+# Restored original extract_mechanical_analysis function
 def extract_mechanical_analysis(text):
     mechanical_data = {}
     lines = text.splitlines()
 
+    # Mechanical properties in the order they appear in the certificate
     properties = ["YS", "UTS", "ELONGN"]
     values = []
 
+    # Extract integer values which correspond to the mechanical properties
     for line in lines:
-        # Extracting all numeric values assuming they are YS, UTS, ELONGN
-        # First value is YS, second UTS, third ELONGN for each block
-        value_matches = re.findall(r'\b\d+\b', line)
-        if value_matches:
-            values.extend(value_matches[-3:])  # Take last three values (YS, UTS, ELONGN)
+        values.extend(re.findall(r'\b\d+\b', line))
 
-    # Map properties to values
-    for i, prop in enumerate(properties):
-        if i < len(values):
-            mechanical_data[prop] = values[i]
-        else:
-            mechanical_data[prop] = "N/A"
+    # Align properties with values (last three values correspond to YS, UTS, and ELONGN)
+    if len(values) >= 3:
+        for i, prop in enumerate(properties):
+            mechanical_data[prop] = values[-(3 - i)]
 
     return mechanical_data
 
