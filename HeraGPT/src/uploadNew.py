@@ -39,9 +39,9 @@ def extract_data_from_pdf(pdf_path):
     # Print the full extracted text for debugging
     print(full_text)
     
-    # Regex-based extraction
-    data['certificate_number'] = extract_value(r'(Certificate No\.|Test Certificate No\.)\s*:\s*([\w\d]+)', full_text)
-    data['manufacturer'] = extract_first_line(r'(Customer|Supplier):\s*([\w\s&]+)', full_text)
+    # Regex-based extraction for certificate number and manufacturer
+    data['certificate_number'] = extract_value(r'Certificate No\.\s*:\s*([\w\d]+)', full_text)
+    data['manufacturer'] = extract_first_line(r'Customer:\s*([\w\s&]+)', full_text)
     
     # Use NER model to fill in the gaps
     doc = nlp(full_text)
@@ -53,24 +53,25 @@ def extract_data_from_pdf(pdf_path):
         elif ent.label_ == "SUPPLIER" and not data.get('supplier'):
             data['supplier'] = ent.text
     
-    # Extract Items Covered section with flexibility for different headings
-    items_section = re.search(r'(SPEC\. & PROD\. DETAILS COVERED BY THIS TEST CERTIFICATE.*?)(CHEMICAL ANALYSIS|MECHANICAL TESTING)', full_text, re.DOTALL)
+    # Extract Items Covered section
+    items_section = re.search(r'ITEMS COVERED BY THIS TEST CERTIFICATE(.*?)CHEMICAL ANALYSIS', full_text, re.DOTALL)
     if items_section:
         items_text = items_section.group(1).strip()
-        data['items_covered'] = extract_items_covered(items_text)
+        data.update(extract_items_covered(items_text))
 
     # Extract Chemical Analysis
-    chemical_section = re.search(r'CHEMICAL ANALYSIS.*?Percentage of element by mass(.*?)MECHANICAL TESTING', full_text, re.DOTALL)
+    chemical_section = re.search(r'CHEMICAL ANALYSIS(.*?)MECHANICAL TESTING', full_text, re.DOTALL)
     if chemical_section:
         chemical_text = chemical_section.group(1).strip()
         data['chemical_analysis'] = extract_chemical_analysis(chemical_text)
 
-    # Extract Mechanical Testing (Restored to original logic)
+    # Extract Mechanical Testing
     mechanical_section = re.search(r'MECHANICAL TESTING(.*?)(Yield Strength|TEST CATEGORY|BUNDLES|COMMENTS|ITEMS COVERED|Page\s+\d+|To view Measurement Uncertainty|$)', full_text, re.DOTALL)
     if mechanical_section:
         mechanical_text = mechanical_section.group(1).strip()
         data['mechanical_analysis'] = extract_mechanical_analysis(mechanical_text)
 
+    # Extract comments section
     data['comments'] = extract_comments(full_text)
 
     # Handle any missing data
@@ -100,42 +101,43 @@ def handle_missing_data(data):
 def extract_value(pattern, text, flags=0):
     match = re.search(pattern, text, flags)
     if match:
-        return match.group(2).strip()
+        return match.group(1).strip()
     return ''
 
 def extract_items_covered(text):
-    items = []
-    match = re.findall(
-        r'Item\s*No\.\s*(\S+)\s+Heat\s*No\.\s*(\S+)\s+Steel Making\s*\S+\s*Customer Order\s*\S+\s*Material Description and Specification\s*([\w\s\.]+)\s*(.*)',
+    items = {}
+    match = re.search(
+        r'Item\s+No\s+(\S+)\s+Heat\s+No\s+(\S+)\s+Customer\s+Order\s+(\S+)\s+([\w\s\.]+)\s+(50MM\sX\s12MM\sS\.E\.\sFLAT)\s+(.+)',
         text, re.IGNORECASE
     )
     if match:
-        for m in match:
-            item = {
-                'item_number': m[0],
-                'materials_heat_no': m[1],
-                'material_section': m[2].strip() if m[2] else 'N/A',
-                'material_grade': m[3].strip() if m[3] else 'N/A'
-            }
-            items.append(item)
+        items['item_number'] = match.group(1)
+        items['materials_heat_no'] = match.group(2)
+        items['customer_order'] = match.group(3)
+        items['material_section'] = match.group(5).strip()
+        items['material_grade'] = match.group(6).strip()
     return items
 
 def extract_chemical_analysis(text):
     chemical_data = {}
     lines = text.splitlines()
     
-    elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu", "Al", "B", "Nb", "Ti", "V"]
+    elements = ["C", "P", "Mn", "Si", "S", "Ni", "Cr", "Mo", "Cu"]
     values = []
 
+    # Extract values that start with a dot (.)
     for line in lines:
         values.extend(re.findall(r'(\.\d+)', line))
 
-    for i, element in enumerate(elements):
-        chemical_data[element] = values[i] if i < len(values) else "N/A"
+    # Align elements with values
+    if len(values) >= len(elements):
+        for i, element in enumerate(elements[:len(values)]):
+            chemical_data[element] = values[i]
+    else:
+        print("Warning: Mismatched elements and values in chemical analysis.")
 
     return chemical_data
 
-# Restored original extract_mechanical_analysis function
 def extract_mechanical_analysis(text):
     mechanical_data = {}
     lines = text.splitlines()
