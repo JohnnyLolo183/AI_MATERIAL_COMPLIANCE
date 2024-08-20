@@ -19,15 +19,21 @@
         }
 
         .results-container {
-            margin-top: 5px;
-            padding: 20px;
-            width: 50%;
-            background-color: #f4f4f4;
-            white-space: pre-wrap; /* Ensure text wraps within the container */
-            max-height: auto; /* Adjust this value as needed */
-            overflow-y: auto; /* Add vertical scroll if content overflows */
-            position: relative; /* This is needed for absolute positioning of child elements */
-        }
+    margin-top: 5px;
+    padding: 20px;
+    width: 50%;
+    background-color: #f4f4f4;
+    max-height: auto; /* Adjust this value as needed */
+    overflow-y: auto; /* Add vertical scroll if content overflows */
+    position: relative; /* This is needed for absolute positioning of child elements */
+    word-wrap: break-word; /* Ensure long words break to the next line */
+}
+
+#openaiResults {
+    white-space: pre-wrap; /* Preserve formatting, but wrap long lines */
+    word-wrap: break-word; /* Ensure long words break to the next line */
+}
+
 
         .comment-box {
             width: 100%;
