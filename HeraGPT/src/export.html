@@ -76,11 +76,13 @@
         
         /*------------------------------------------------------------------------------*/
         /* Signitue Contanor------------------------------------------------------------*/
-        .signitue_frame {
-            width: 50%; /* Adjust size as needed */
-            height: 60px; /* Adjust size as needed */
-            top: 200px;
+        .signature-pad {
+            width: 150px; /* Adjust size as needed */
+            height: 80px; /* Adjust size as needed */
+            top: 100px;
             border: 1px solid #000000;
+           
+            
         }
         
         /*------------------------------------------------------------------------------*/
@@ -90,10 +92,15 @@
             border: 2px solid black;
             background-color: white;
             cursor: pointer;
-            width: 50%;
+            width: 100%;
             text-align: center;
             opacity: 0.8;
             border-radius: 5px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center children horizontally */
+            bottom: 50%;
         }
 
         .sig_button:hover, .home-btn:hover {
@@ -150,6 +157,21 @@
             background-color: red;
             opacity: 0.60;
         }
+
+         /*------draw function GUI-------------------------------------------------------------*/
+         .wrapper {
+           
+            width: 150px; /* Adjust size as needed */
+            height: 80px; /* Adjust size as needed */
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+          }
+         
+          
+         
+         /*------------------------------------------------------------------------------------*/
     </style>
 </head>
 <body class="new-page">
@@ -163,8 +185,22 @@
             </div>
             <!-- Signiture function-->
             <div class="signiture_container">
-                <iframe id="signitue_frame" class="signitue_frame" src="" frameborder="0"></iframe> 
-                <button id="signature_button" class="sig_button">Sign</button>
+                <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+                <!-- <iframe id="signitue_frame" class="signitue_frame" src="" frameborder="0"></iframe>  -->
+                <!-- <button id="signature_button" class="sig_button">Sign</button> -->
+                <!-- Draw html-------------------------------------------------------------------------- -->
+                <div class="wrapper">
+                    
+                    <canvas id="signature-pad" class="signature-pad" width=150 height=80></canvas>
+                    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+                </div>
+                <!-------------------------------------------------------------------------------------- -->
+                <!-- save and clear function ----------------------------------------------------------- -->
+               
+                    <button id="save" class="sig_button">Sign</button>
+                    <button id="clear"  class="sig_button">Clear</button>
+                 
+                <!-------------------------------------------------------------------------------------- -->
             </div>
         </div>
         <div class="right-side">
@@ -239,7 +275,25 @@
                 }
             });
         });
-
+    // draw feture------------------------------------------------------------------------------------------------
+    var signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
+        backgroundColor: 'rgba(255, 255, 255, 0)',
+        penColor: 'rgb(0, 0, 0)'
+      });
+      var saveButton = document.getElementById('save');
+      var cancelButton = document.getElementById('clear');
+      
+      saveButton.addEventListener('click', function (event) {
+        var data = signaturePad.toDataURL('image/png');
+      
+      // Send data to server instead...
+        window.open(data);
+      });
+      
+      cancelButton.addEventListener('click', function (event) {
+        signaturePad.clear();
+      });
+    // -----------------------------------------------------------------------------------------------------------
     </script>
 </body>
 </html>

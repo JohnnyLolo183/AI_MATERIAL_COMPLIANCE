@@ -19,7 +19,8 @@ if (file_exists($envFilePath)) {
 }
 
 // Function to call OpenAI API using cURL
-function callOpenAI($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey) {
+function callOpenAI($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey)
+{
     $url = 'https://api.openai.com/v1/chat/completions';
 
     // Prepare a concise prompt with both files' content and ask the AI to provide a compliance check
@@ -80,7 +81,8 @@ function callOpenAI($certificateContent, $standardContent, $certificateFileName,
 }
 
 // Function to extract text from PDF using pdftotext
-function extractTextFromPDF($pdfPath, $maxLength = 5000) {
+function extractTextFromPDF($pdfPath, $maxLength = 5000)
+{
     $outputFile = tempnam(sys_get_temp_dir(), 'pdftotext');
     shell_exec("pdftotext -q -nopgbrk -enc UTF-8 '$pdfPath' '$outputFile'");
     $text = file_get_contents($outputFile);
@@ -89,7 +91,8 @@ function extractTextFromPDF($pdfPath, $maxLength = 5000) {
 }
 
 // Function to extract text from Excel using PhpSpreadsheet
-function extractTextFromExcel($excelPath, $maxLength = 5000) {
+function extractTextFromExcel($excelPath, $maxLength = 5000)
+{
     $spreadsheet = IOFactory::load($excelPath);
     $worksheet = $spreadsheet->getActiveSheet();
     $text = '';
@@ -108,7 +111,8 @@ function extractTextFromExcel($excelPath, $maxLength = 5000) {
 }
 
 // Function to read the specific standard file and extract its text
-function readStandardFile($standardName, $directory, $maxLength = 5000) {
+function readStandardFile($standardName, $directory, $maxLength = 5000)
+{
     $files = glob("$directory/*.xlsx");
     foreach ($files as $file) {
         if (stripos(basename($file, '.xlsx'), str_replace('/', '-', strtolower($standardName))) !== false) {
