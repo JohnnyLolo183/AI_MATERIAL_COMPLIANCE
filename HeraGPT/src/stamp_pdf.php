@@ -71,9 +71,10 @@ function stampPDF($filePath, $stampType, $signatureData = null, $isSigned = fals
         // Remove any existing compliant or noncompliant prefix from the filename
         $fileName = preg_replace('/^(compliant_|noncompliant_)/', '', $fileName);
     } else {
-        $prefix = ''; // No prefix for comment addition
+        $prefix = ($stampType == 'compliant') ? 'compliant_' : 'noncompliant_';
         $fileName = basename($filePath);
     }
+    
 
     $outputPath = 'uploads/' . $prefix . $fileName;
     $pdf->Output($outputPath, 'F');
