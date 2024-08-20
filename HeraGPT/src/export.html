@@ -66,16 +66,18 @@
             
         }
         /* Signiture CSS *//*----------------------------------------------------------*/
-            .signiture_container {
-                position: relative; /* Ensures the iframe is positioned correctly */
-                top: 100px;
+        .signiture_container {
+            display: flex;
+            flex-direction: column; /* Stack children vertically */
+            align-items: center; /* Center children horizontally */
+            position: absolute;
+            bottom: 50%; /* Adjust based on your needs */
         }
-
         
         /*------------------------------------------------------------------------------*/
         /* Signitue Contanor------------------------------------------------------------*/
         .signitue_frame {
-            width: 100px; /* Adjust size as needed */
+            width: 50%; /* Adjust size as needed */
             height: 60px; /* Adjust size as needed */
             top: 200px;
             border: 1px solid #000000;
@@ -83,16 +85,19 @@
         
         /*------------------------------------------------------------------------------*/
         /* Signitue Button------------------------------------------------------------*/
-          .sig_button {
-            margin: 10px 0;
+        .sig_button {
+            margin-top: 10px; /* Add some space between the iframe and the button */
             border: 2px solid black;
             background-color: white;
             cursor: pointer;
-            width: 100px;
+            width: 50%;
             text-align: center;
             opacity: 0.8;
             border-radius: 5px;
-            
+        }
+
+        .sig_button:hover, .home-btn:hover {
+            background-color: #3a3a3a;
         }
         /*------------------------------------------------------------------------------*/
         
