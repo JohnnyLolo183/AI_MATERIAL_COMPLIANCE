@@ -3,12 +3,12 @@ require '../vendor/autoload.php';
 
 use setasign\Fpdi\Fpdi;
 
-class PdfWithStamp extends Fpdi
+class stamp_pdf extends Fpdi
 {
 }
 
 function stampPDF($filePath, $stampType) {
-    $pdf = new PdfWithStamp();
+    $pdf = new stamp_pdf();
     $pageCount = $pdf->setSourceFile($filePath);
 
     $stampImagePath = ($stampType == 'compliant') ? '../images/compliant.png' : '../images/noncompliant.png';
@@ -56,4 +56,3 @@ if (isset($_GET['pdf']) && isset($_GET['type'])) {
     echo "PDF: " . isset($_GET['pdf']) . "<br>";
     echo "Type: " . isset($_GET['type']) . "<br>";
 }
-?>

@@ -43,12 +43,12 @@ body {
 }
 
 .upload-btn:hover {
-    background-color: #3a3a3a; /* Slightly darker grey for hover effect */
+    background-color: #02ade6; /* Slightly darker grey for hover effect */
 }
 
 .description {
     font-size: 16px; /* Adjust as needed */
-    color: #333; /* Adjust this color as needed */
+    color: #898989; /* Adjust this color as needed */
 }
 
 .description.small-light {

@@ -5,11 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Certificate</title>
     <link rel="stylesheet" href="landingPage.css">
+    <style>
+        /* Additional styling for the date and time */
+        .date-time {
+            font-size: 16px;
+            color: #898989;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
+        <!-- Live Date and Time Above the Logo -->
+        <p class="date-time" id="dateTime"></p>
+        
         <img src="../images/HERA2.png" alt="HERA Logo" class="logo">
         <p class="description">Compare Certificate Information to Industry Standards</p>
+        
         <form id="pdfUploadForm" action="upload.php" method="post" enctype="multipart/form-data">
             <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" required>
             <button type="submit" class="upload-btn">Upload Certificate</button>
@@ -17,6 +29,22 @@
         <p class="description small-light">Ensure uploaded certificates are in pdf format and display good readability</p>
         <div id="result"></div>
     </div>
+
+    <script>
+        // JavaScript to update the date and time every second
+        function updateDateTime() {
+            const dateTimeElement = document.getElementById('dateTime');
+            const now = new Date();
+            const formattedDateTime = now.toLocaleString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            dateTimeElement.textContent = formattedDateTime;
+        }
+
+        // Update date and time immediately and every second
+        setInterval(updateDateTime, 1000);
+        updateDateTime(); // Initial call to show date and time immediately
+    </script>
 </body>
 </html>
-
