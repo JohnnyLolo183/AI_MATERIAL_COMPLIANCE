@@ -260,12 +260,27 @@
 
             exportBtn.addEventListener('click', function() {
     const commentText = document.getElementById('commentsBox').value;
+
     if (stampedFilePath) {
-        window.location.href = `stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&comment=${encodeURIComponent(commentText)}&export=true`;
+        // Send the request to stamp the PDF with the comment (if any)
+        fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&comment=${encodeURIComponent(commentText)}`)
+            .then(response => response.text())
+            .then(data => {
+                if (data && data.includes('uploads/')) {
+                    stampedFilePath = data.trim();
+                    // Redirect to the download page with the file path
+                    window.location.href = `download.html?file=${encodeURIComponent(stampedFilePath)}`;
+                } else {
+                    console.error('Unexpected response:', data);
+                    alert("Error: Could not export the PDF. Please try again.");
+                }
+            })
+            .catch(error => console.error('Error:', error));
     } else {
         alert('Please mark the certificate as compliant or non-compliant before exporting.');
     }
 });
+
 
 
             var signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
