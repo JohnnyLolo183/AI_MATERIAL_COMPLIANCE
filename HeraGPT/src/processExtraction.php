@@ -26,8 +26,8 @@ function callOpenAI($certificateContent, $standardContent, $certificateFileName,
     // Prepare a concise prompt with both files' content and ask the AI to provide a compliance check
     $prompt = "Analyze the uploaded steel certificate and NZ Standard file. 
         Mention the uploaded file names and whether the certificate complies with the standard as shown:
-        'Result: (Compliant/Non-Compliant) Certificate $certificateFileName 'complies/does not comply' with $standardFileName.' 
-        Only provide required information.
+        'Result: (Compliant/Non-Compliant)Certificate $certificateFileName 'complies/does not comply' with $standardFileName.' 
+        Only provide required information, nothing else.
         \nCertificate File Name: $certificateFileName
         \nCertificate Content: $certificateContent
         \nStandard File Name: $standardFileName

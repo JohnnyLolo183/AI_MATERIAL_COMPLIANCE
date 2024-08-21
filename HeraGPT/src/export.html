@@ -19,28 +19,23 @@
         }
 
         .results-container {
-            margin-top: 5px;
-            padding: 20px;
-            width: 50%;
-            background-color: #f4f4f4;
-            white-space: pre-wrap; /* Ensure text wraps within the container */
-            max-height: auto; /* Adjust this value as needed */
-            overflow-y: auto; /* Add vertical scroll if content overflows */
-        }
+    margin-top: 5px;
+    padding: 20px;
+    width: 50%;
+    background-color: #f4f4f4;
+    max-height: auto; /* Adjust this value as needed */
+    overflow-y: auto; /* Add vertical scroll if content overflows */
+    position: relative; /* This is needed for absolute positioning of child elements */
+    word-wrap: break-word; /* Ensure long words break to the next line */
+}
 
-        .results-container {
-            margin-top: 5px;
-            padding: 20px;
-            width: 50%;
-            background-color: #f4f4f4;
-            white-space: pre-wrap; /* Ensure text wraps within the container */
-            max-height: auto; /* Adjust this value as needed */
-            overflow-y: auto; /* Add vertical scroll if content overflows */
-            position: relative; /* This is needed for absolute positioning of child elements */
-        }
+#openaiResults {
+    white-space: pre-wrap; /* Preserve formatting, but wrap long lines */
+    word-wrap: break-word; /* Ensure long words break to the next line */
+}
 
-        .comment-box
-        {
+
+        .comment-box {
             width: 100%;
             height: 100px;
             margin-top: 20%;
@@ -55,7 +50,6 @@
             right: 10px;
             width: calc(100% - 20px);
         }
-
 
         /* Specific styles for export.html */
         .left-side {
@@ -88,9 +82,9 @@
             position: absolute;
             bottom: 20px; /* Space from the bottom */
             width: 100%;
-            
         }
-        /* Signiture CSS *//*----------------------------------------------------------*/
+
+        /* Signature CSS */
         .signiture_container {
             display: flex;
             flex-direction: column; /* Stack children vertically */
@@ -98,20 +92,13 @@
             position: absolute;
             bottom: 50%; /* Adjust based on your needs */
         }
-        
-        /*------------------------------------------------------------------------------*/
-        /* Signitue Contanor------------------------------------------------------------*/
+
         .signature-pad {
             width: 150px; /* Adjust size as needed */
             height: 80px; /* Adjust size as needed */
-            top: 100px;
             border: 1px solid #000000;
-           
-            
         }
-        
-        /*------------------------------------------------------------------------------*/
-        /* Signitue Button------------------------------------------------------------*/
+
         .sig_button {
             margin-top: 10px; /* Add some space between the iframe and the button */
             border: 2px solid black;
@@ -121,18 +108,21 @@
             text-align: center;
             opacity: 0.8;
             border-radius: 5px;
-
             display: flex;
             flex-direction: column;
             align-items: center; /* Center children horizontally */
-            bottom: 50%;
+            transition: background-color 0.3s, opacity 0.3s;
+        }
+
+        .sig_button.active {
+            background-color: green;
+            color: white;
         }
 
         .sig_button:hover, .home-btn:hover {
             background-color: #3a3a3a;
         }
-        /*------------------------------------------------------------------------------*/
-        
+
         .value-section {
             width: 100%;
             display: flex;
@@ -167,6 +157,7 @@
             text-align: center;
             opacity: 0.8;
             border-radius: 5px;
+            transition: background-color 0.3s, opacity 0.3s;
         }
 
         .status-btn.active {
@@ -178,25 +169,19 @@
             opacity: 0.60;
         }
 
-        .status-btn.non-compliant.active {
+        .status-btn.active.non-compliant {
             background-color: red;
-            opacity: 0.60;
+            color: white;
         }
 
-         /*------draw function GUI-------------------------------------------------------------*/
-         .wrapper {
-           
+        .wrapper {
             width: 150px; /* Adjust size as needed */
             height: 80px; /* Adjust size as needed */
             -moz-user-select: none;
             -webkit-user-select: none;
             -ms-user-select: none;
             user-select: none;
-          }
-         
-          
-         
-         /*------------------------------------------------------------------------------------*/
+        }
     </style>
 </head>
 <body class="new-page">
@@ -208,24 +193,13 @@
                 <button id="nonCompliantBtn" class="status-btn non-compliant" data-type="noncompliant">Non-Compliant</button>
                 <button id="exportBtn" class="action-btn">Export</button>
             </div>
-            <!-- Signiture function-->
+            <!-- Signature function-->
             <div class="signiture_container">
-                <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
-                <!-- <iframe id="signitue_frame" class="signitue_frame" src="" frameborder="0"></iframe>  -->
-                <!-- <button id="signature_button" class="sig_button">Sign</button> -->
-                <!-- Draw html-------------------------------------------------------------------------- -->
                 <div class="wrapper">
-                    
-                    <canvas id="signature-pad" class="signature-pad" width=150 height=80></canvas>
-                    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+                    <canvas id="signature-pad" class="signature-pad" width="150" height="80"></canvas>
                 </div>
-                <!-------------------------------------------------------------------------------------- -->
-                <!-- save and clear function ----------------------------------------------------------- -->
-               
-                    <button id="save" class="sig_button">Sign</button>
-                    <button id="clear"  class="sig_button">Clear</button>
-                 
-                <!-------------------------------------------------------------------------------------- -->
+                <button id="save" class="sig_button">Sign</button>
+                <button id="clear" class="sig_button">Clear</button>
             </div>
         </div>
         <div class="right-side">
@@ -241,6 +215,7 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -257,8 +232,6 @@
 
             if (result) {
                 const data = JSON.parse(result);
-
-                // Format the result from OpenAI for better readability
                 const formattedResult = data.response.replace(/(Compliant|Non-Compliant)/g, '\n$1\n\n');
                 document.getElementById('openaiResults').innerHTML = formattedResult.replace(/\n/g, '<br>');
             } else {
@@ -268,6 +241,8 @@
             const compliantBtn = document.getElementById('compliantBtn');
             const nonCompliantBtn = document.getElementById('nonCompliantBtn');
             const exportBtn = document.getElementById('exportBtn');
+            const saveButton = document.getElementById('save');
+            const cancelButton = document.getElementById('clear');
 
             function markStamp(type) {
                 fetch(`stamp_pdf.php?pdf=${encodeURIComponent(pdfUrl)}&type=${type}`)
@@ -275,11 +250,11 @@
                     .then(data => {
                         stampedFilePath = data.trim();
                         if (type === 'compliant') {
-                            compliantBtn.classList.add('active');
-                            nonCompliantBtn.classList.remove('active');
+                            compliantBtn.classList.add('active', 'compliant');
+                            nonCompliantBtn.classList.remove('active', 'non-compliant');
                         } else {
-                            nonCompliantBtn.classList.add('active');
-                            compliantBtn.classList.remove('active');
+                            nonCompliantBtn.classList.add('active', 'non-compliant');
+                            compliantBtn.classList.remove('active', 'compliant');
                         }
                     })
                     .catch(error => console.error('Error:', error));
@@ -294,32 +269,75 @@
             });
 
             exportBtn.addEventListener('click', function() {
-                if (stampedFilePath) {
+    const commentText = document.getElementById('commentsBox').value;
+
+    if (stampedFilePath) {
+        // Send the request to stamp the PDF with the comment (if any)
+        fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&comment=${encodeURIComponent(commentText)}`)
+            .then(response => response.text())
+            .then(data => {
+                if (data && data.includes('uploads/')) {
+                    stampedFilePath = data.trim();
+                    // Redirect to the download page with the file path
                     window.location.href = `download.html?file=${encodeURIComponent(stampedFilePath)}`;
                 } else {
-                    alert('Please mark the certificate as compliant or non-compliant before exporting.');
+                    console.error('Unexpected response:', data);
+                    alert("Error: Could not export the PDF. Please try again.");
                 }
+            })
+            .catch(error => console.error('Error:', error));
+    } else {
+        alert('Please mark the certificate as compliant or non-compliant before exporting.');
+    }
+});
+
+
+
+            var signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
+                backgroundColor: 'rgba(255, 255, 255, 0)',
+                penColor: 'rgb(0, 0, 0)'
+            });
+
+            saveButton.addEventListener('click', function (event) {
+    if (stampedFilePath) {
+        var canvas = document.getElementById('signature-pad');
+        var ctx = canvas.getContext('2d');
+        
+        // Add the "Verified" text
+        ctx.font = "12px Arial"; // Set font size and style
+        ctx.fillStyle = "black"; // Set text color
+        var text = "Verified";
+        var textWidth = ctx.measureText(text).width;
+        ctx.fillText(text, canvas.width - textWidth - 10, canvas.height - 5); // Position text in the bottom-right corner
+
+        var signatureData = canvas.toDataURL('image/png');
+
+        // Send the signature data to the PHP script along with the stamped file path and indicate it should be signed
+        fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&signature=${encodeURIComponent(signatureData)}&signed=true`)
+            .then(response => response.text())
+            .then(data => {
+                if (data && data.includes('uploads/')) {
+                    stampedFilePath = data.trim();
+                    // Highlight the "Sign" button green
+                    saveButton.classList.add('active');
+                    saveButton.style.backgroundColor = "green";
+                    saveButton.style.color = "white";
+                } else {
+                    console.error('Unexpected response:', data);
+                    alert("Error: Could not sign the PDF. Please try again.");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    } else {
+        alert('Please mark the certificate as compliant or non-compliant before signing.');
+    }
+});
+
+            cancelButton.addEventListener('click', function (event) {
+                signaturePad.clear();
+                saveButton.classList.remove('active'); // Reset the button color
             });
         });
-    // draw feture------------------------------------------------------------------------------------------------
-    var signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
-        backgroundColor: 'rgba(255, 255, 255, 0)',
-        penColor: 'rgb(0, 0, 0)'
-      });
-      var saveButton = document.getElementById('save');
-      var cancelButton = document.getElementById('clear');
-      
-      saveButton.addEventListener('click', function (event) {
-        var data = signaturePad.toDataURL('image/png');
-      
-      // Send data to server instead...
-        window.open(data);
-      });
-      
-      cancelButton.addEventListener('click', function (event) {
-        signaturePad.clear();
-      });
-    // -----------------------------------------------------------------------------------------------------------
     </script>
 </body>
 </html>
