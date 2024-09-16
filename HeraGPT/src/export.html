@@ -133,9 +133,13 @@
             transition: background-color 0.3s, opacity 0.3s;
         }
 
-        .status-btn.active.compliant {
+        .status-btn.active {
+            opacity: 1;
+        }
+
+        .status-btn.compliant.active {
             background-color: green;
-            color: white;
+            opacity: 0.60;
         }
 
         .status-btn.active.non-compliant {
@@ -251,6 +255,7 @@
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
+                console.log("PDF URL set to:", pdfUrl); // Debugging line
             } else {
                 console.error("No PDF URL found in query parameters");
             }
