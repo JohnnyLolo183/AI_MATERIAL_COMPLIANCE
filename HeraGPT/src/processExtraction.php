@@ -4,6 +4,8 @@ require 'load_env.php'; // Include your custom environment loader
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
+session_start(); // Already starting session
+
 // Load the environment variables
 $envFilePath = __DIR__ . '/.env';
 if (file_exists($envFilePath)) {
@@ -18,33 +20,55 @@ if (file_exists($envFilePath)) {
     exit;
 }
 
+// Retrieve API key directly from environment variables
+$apiKey = getenv('OPENAI_API_KEY');
+
+if (!$apiKey) {
+    echo "API key is not set.";
+    exit;
+}
+
+// Store API key in session for later use
+$_SESSION['apiKey'] = $apiKey;
+
 // Function to call OpenAI API using cURL
-function callOpenAI($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey)
+function callOpenAI($certificateContent, $standardContent, $certificateFileName, $standardFileName, $apiKey, $userMessage = null)
 {
     $url = 'https://api.openai.com/v1/chat/completions';
 
-    // Prepare a concise prompt with both files' content and ask the AI to provide a compliance check
-    $prompt = "Analyze the uploaded steel certificate and NZ Standard file. 
-        Mention the uploaded file names and whether the certificate complies with the standard as shown:
-        'Result: (Compliant/Non-Compliant)Certificate $certificateFileName 'complies/does not comply' with $standardFileName.' 
-        Only provide required information, nothing else.
+    // Initialize chat history in session if not already set
+    if (!isset($_SESSION['chatHistory'])) {
+        $_SESSION['chatHistory'] = [];
+        // Add initial system prompt for context
+        $_SESSION['chatHistory'][] = ['role' => 'system', 'content' => 'You are a Steel certificate compliance checker.'];
+    }
+
+    // If the user provides a new message, append it to the chat history
+    if ($userMessage) {
+        $_SESSION['chatHistory'][] = ['role' => 'user', 'content' => $userMessage];
+    } else {
+        // If no user message, start with a compliance check prompt
+        $initialPrompt = "Analyze the uploaded steel certificate and NZ Standard file. 
+        Onlyention the uploaded file names and whether the certificate complies with the standard as shown:
+        'Result: (Compliant/Non-Compliant) Certificate $certificateFileName 'complies/does not comply' with $standardFileName.' 
+        Only provide required information, nothing more.
         \nCertificate File Name: $certificateFileName
         \nCertificate Content: $certificateContent
         \nStandard File Name: $standardFileName
         \nStandard Content: $standardContent";
 
+        $_SESSION['chatHistory'][] = ['role' => 'user', 'content' => $initialPrompt];
+    }
+
     $data = [
-        'model' => 'gpt-4o',
-        'messages' => [
-            ['role' => 'system', 'content' => 'You are a Steel certificate compliance checker.'],
-            ['role' => 'user', 'content' => $prompt],
-        ],
+        'model' => 'chatgpt-4o-latest',
+        'messages' => $_SESSION['chatHistory'],  // Use the entire chat history
         'max_tokens' => 4000, // Adjust this as needed
     ];
 
     $headers = [
         'Content-Type: application/json',
-        'Authorization: Bearer ' . $apiKey,
+        'Authorization: Bearer ' . $apiKey,  // Keep your original format
     ];
 
     $ch = curl_init($url);
@@ -54,6 +78,7 @@ function callOpenAI($certificateContent, $standardContent, $certificateFileName,
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     $response = curl_exec($ch);
     $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
     if (curl_errno($ch)) {
         echo 'Curl error: ' . curl_error($ch);
         exit;
@@ -72,12 +97,14 @@ function callOpenAI($certificateContent, $standardContent, $certificateFileName,
         exit;
     }
 
-    // Extracting the required fields from the response (assuming the response format)
-    $extractedData = [
-        'response' => $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API',
-    ];
+    // Extracting the AI response from the response
+    $aiResponse = $response_data['choices'][0]['message']['content'] ?? 'No response from OpenAI API';
 
-    return json_encode($extractedData);
+    // Append AI response to chat history
+    $_SESSION['chatHistory'][] = ['role' => 'assistant', 'content' => $aiResponse];
+
+    // Return the AI response as JSON
+    return json_encode(['response' => $aiResponse]);
 }
 
 // Function to extract text from PDF using pdftotext
@@ -152,6 +179,12 @@ if (isset($_GET['pdf'])) {
         exit;
     }
 
+    // Store the extracted certificate and standard content for the chat
+    $_SESSION['certificateContent'] = $pdfContent;
+    $_SESSION['standardContent'] = $standardFile['content'];
+    $_SESSION['certificateFileName'] = basename($pdfPath);
+    $_SESSION['standardFileName'] = $standardFile['filename'];
+
     // Retrieve API key directly from environment variables
     $apiKey = getenv('OPENAI_API_KEY');
     if (!$apiKey) {
@@ -164,6 +197,17 @@ if (isset($_GET['pdf'])) {
     // Redirect to export.html with the result as a query parameter
     header('Location: export.html?result=' . urlencode($result) . '&pdf=' . urlencode($pdfPath));
     exit;
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle OpenAI Chat interaction
+    $requestData = json_decode(file_get_contents('php://input'), true);
+    $userMessage = $requestData['message'] ?? 'No message provided';
+
+    // Call OpenAI for the chat
+    $chatResult = callOpenAI($_SESSION['certificateContent'], $_SESSION['standardContent'], $_SESSION['certificateFileName'], $_SESSION['standardFileName'], $apiKey, $userMessage);
+
+    // Return the chat result as JSON
+    echo $chatResult;
+    exit;
 } else {
-    echo "No PDF provided.";
+    echo "No PDF provided or invalid request.";
 }

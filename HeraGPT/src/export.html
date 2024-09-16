@@ -19,21 +19,20 @@
         }
 
         .results-container {
-    margin-top: 5px;
-    padding: 20px;
-    width: 50%;
-    background-color: #f4f4f4;
-    max-height: auto; /* Adjust this value as needed */
-    overflow-y: auto; /* Add vertical scroll if content overflows */
-    position: relative; /* This is needed for absolute positioning of child elements */
-    word-wrap: break-word; /* Ensure long words break to the next line */
-}
+            margin-top: 5px;
+            padding: 20px;
+            width: 45%;
+            background-color: #f4f4f4;
+            max-height: auto;
+            overflow-y: auto;
+            position: relative;
+            word-wrap: break-word;
+        }
 
-#openaiResults {
-    white-space: pre-wrap; /* Preserve formatting, but wrap long lines */
-    word-wrap: break-word; /* Ensure long words break to the next line */
-}
-
+        #openaiResults {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
 
         .comment-box {
             width: 100%;
@@ -51,56 +50,54 @@
             width: calc(100% - 20px);
         }
 
-        /* Specific styles for export.html */
         .left-side {
-            width: 20%; /* Reduced width */
+            width: 20%;
             padding: 20px;
             box-sizing: border-box;
             height: 100%;
-            position: relative; /* For absolute positioning of elements */
+            position: relative;
         }
 
         .right-side {
-            width: 80%; /* Increased width */
+            width: 75%;
             display: flex;
             align-items: flex-start;
             justify-content: flex-start;
             padding: 20px;
             box-sizing: border-box;
             height: 100%;
-            flex-wrap: wrap; /* Allows content to wrap */
+            flex-wrap: wrap;
         }
 
         .action-btn {
-            padding: 10px 20px; /* Adjusted padding to reduce space */
+            padding: 10px 20px;
         }
 
         .button-container {
             display: flex;
             flex-direction: column;
-            align-items: center; /* Center the button horizontally */
+            align-items: center;
             position: absolute;
-            bottom: 20px; /* Space from the bottom */
+            bottom: 20px;
             width: 100%;
         }
 
-        /* Signature CSS */
         .signiture_container {
             display: flex;
-            flex-direction: column; /* Stack children vertically */
-            align-items: center; /* Center children horizontally */
+            flex-direction: column;
+            align-items: center;
             position: absolute;
-            bottom: 50%; /* Adjust based on your needs */
+            bottom: 50%;
         }
 
         .signature-pad {
-            width: 150px; /* Adjust size as needed */
-            height: 80px; /* Adjust size as needed */
+            width: 150px;
+            height: 80px;
             border: 1px solid #000000;
         }
 
         .sig_button {
-            margin-top: 10px; /* Add some space between the iframe and the button */
+            margin-top: 10px;
             border: 2px solid black;
             background-color: white;
             cursor: pointer;
@@ -110,7 +107,7 @@
             border-radius: 5px;
             display: flex;
             flex-direction: column;
-            align-items: center; /* Center children horizontally */
+            align-items: center;
             transition: background-color 0.3s, opacity 0.3s;
         }
 
@@ -121,30 +118,6 @@
 
         .sig_button:hover, .home-btn:hover {
             background-color: #3a3a3a;
-        }
-
-        .value-section {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            padding: 10px;
-            box-sizing: border-box;
-            overflow-y: auto; /* Add vertical scroll if content exceeds container */
-        }
-
-        .value-item {
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .value-item label {
-            width: 30%;
-        }
-
-        .value-item .display-box {
-            width: 70%;
         }
 
         .status-btn {
@@ -171,12 +144,62 @@
         }
 
         .wrapper {
-            width: 150px; /* Adjust size as needed */
-            height: 80px; /* Adjust size as needed */
+            width: 150px;
+            height: 80px;
             -moz-user-select: none;
             -webkit-user-select: none;
             -ms-user-select: none;
             user-select: none;
+        }
+
+        /* Chatbox styling */
+        .chat-container {
+            width: 60%; /* Made it wider to expand left */
+            margin-right: 4%; /* Moved it a bit towards the left */
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f4f4f4;
+            height: 92.5%; /* Taller */
+            position: relative;
+        }
+
+        .chat-messages {
+            width: 90%;
+            height: 73%; /* Adjusted to fit within the chat container */
+            overflow-y: auto;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+
+        .chat-input {
+            width: 98%;
+            height: 40px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            position: static;
+            bottom: 10px;
+            left: 10px;
+        }
+
+        .send-btn {
+            width: 98%;
+            height: 40px;
+            position: static;
+            background-color: #3a3a3a;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .send-btn:hover {
+            background-color: #333;
         }
     </style>
 </head>
@@ -208,6 +231,13 @@
                     <pre id="openaiResults"></pre>
                     <textarea id="commentsBox" class="comment-box" placeholder="Add a comment"></textarea>
                 </div>
+                <!-- Chatbox section -->
+                <div class="chat-container" id="chatContainer">
+                    <h3>Chat with AI</h3>
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <textarea id="chatInput" class="chat-input" placeholder="Type your message..."></textarea>
+                    <button id="sendChatBtn" class="send-btn">Send</button>
+                </div>
             </div>
         </div>
     </div>
@@ -221,9 +251,8 @@
 
             if (pdfUrl) {
                 document.getElementById('pdfViewer').src = pdfUrl;
-                console.log("PDF URL set to:", pdfUrl); // Debugging line
             } else {
-                console.error("No PDF URL found in query parameters"); // Debugging line
+                console.error("No PDF URL found in query parameters");
             }
 
             if (result) {
@@ -231,7 +260,7 @@
                 const formattedResult = data.response.replace(/(Compliant|Non-Compliant)/g, '\n$1\n\n');
                 document.getElementById('openaiResults').innerHTML = formattedResult.replace(/\n/g, '<br>');
             } else {
-                console.error("No result found in query parameters"); // Debugging line
+                console.error("No result found in query parameters");
             }
 
             const compliantBtn = document.getElementById('compliantBtn');
@@ -239,6 +268,40 @@
             const exportBtn = document.getElementById('exportBtn');
             const saveButton = document.getElementById('save');
             const cancelButton = document.getElementById('clear');
+
+            // Chat functionality
+            document.getElementById('sendChatBtn').addEventListener('click', function () {
+                const userMessage = document.getElementById('chatInput').value;
+                if (userMessage.trim() !== "") {
+                    appendMessage("You: " + userMessage);
+                    document.getElementById('chatInput').value = "";
+
+                    // Send the message to the server
+                    fetch('processextraction.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: userMessage })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        appendMessage("AI: " + data.response);
+                    })
+                    .catch(error => {
+                        appendMessage("Error: Could not communicate with the AI.");
+                        console.error('Error:', error);
+                    });
+                }
+            });
+
+            function appendMessage(message) {
+                const chatMessages = document.getElementById('chatMessages');
+                const messageElement = document.createElement('div');
+                messageElement.textContent = message;
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
 
             function markStamp(type) {
                 fetch(`stamp_pdf.php?pdf=${encodeURIComponent(pdfUrl)}&type=${type}`)
@@ -265,29 +328,24 @@
             });
 
             exportBtn.addEventListener('click', function() {
-    const commentText = document.getElementById('commentsBox').value;
-
-    if (stampedFilePath) {
-        // Send the request to stamp the PDF with the comment (if any)
-        fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&comment=${encodeURIComponent(commentText)}`)
-            .then(response => response.text())
-            .then(data => {
-                if (data && data.includes('uploads/')) {
-                    stampedFilePath = data.trim();
-                    // Redirect to the download page with the file path
-                    window.location.href = `download.html?file=${encodeURIComponent(stampedFilePath)}`;
+                const commentText = document.getElementById('commentsBox').value;
+                if (stampedFilePath) {
+                    fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&comment=${encodeURIComponent(commentText)}`)
+                        .then(response => response.text())
+                        .then(data => {
+                            if (data && data.includes('uploads/')) {
+                                stampedFilePath = data.trim();
+                                window.location.href = `download.html?file=${encodeURIComponent(stampedFilePath)}`;
+                            } else {
+                                console.error('Unexpected response:', data);
+                                alert("Error: Could not export the PDF. Please try again.");
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
                 } else {
-                    console.error('Unexpected response:', data);
-                    alert("Error: Could not export the PDF. Please try again.");
+                    alert('Please mark the certificate as compliant or non-compliant before exporting.');
                 }
-            })
-            .catch(error => console.error('Error:', error));
-    } else {
-        alert('Please mark the certificate as compliant or non-compliant before exporting.');
-    }
-});
-
-
+            });
 
             var signaturePad = new SignaturePad(document.getElementById('signature-pad'), {
                 backgroundColor: 'rgba(255, 255, 255, 0)',
@@ -295,43 +353,39 @@
             });
 
             saveButton.addEventListener('click', function (event) {
-    if (stampedFilePath) {
-        var canvas = document.getElementById('signature-pad');
-        var ctx = canvas.getContext('2d');
-        
-        // Add the "Verified" text
-        ctx.font = "12px Arial"; // Set font size and style
-        ctx.fillStyle = "black"; // Set text color
-        var text = "Verified";
-        var textWidth = ctx.measureText(text).width;
-        ctx.fillText(text, canvas.width - textWidth - 10, canvas.height - 5); // Position text in the bottom-right corner
+                if (stampedFilePath) {
+                    var canvas = document.getElementById('signature-pad');
+                    var ctx = canvas.getContext('2d');
+                    ctx.font = "12px Arial";
+                    ctx.fillStyle = "black";
+                    var text = "Verified";
+                    var textWidth = ctx.measureText(text).width;
+                    ctx.fillText(text, canvas.width - textWidth - 10, canvas.height - 5);
 
-        var signatureData = canvas.toDataURL('image/png');
+                    var signatureData = canvas.toDataURL('image/png');
 
-        // Send the signature data to the PHP script along with the stamped file path and indicate it should be signed
-        fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&signature=${encodeURIComponent(signatureData)}&signed=true`)
-            .then(response => response.text())
-            .then(data => {
-                if (data && data.includes('uploads/')) {
-                    stampedFilePath = data.trim();
-                    // Highlight the "Sign" button green
-                    saveButton.classList.add('active');
-                    saveButton.style.backgroundColor = "green";
-                    saveButton.style.color = "white";
+                    fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&signature=${encodeURIComponent(signatureData)}&signed=true`)
+                        .then(response => response.text())
+                        .then(data => {
+                            if (data && data.includes('uploads/')) {
+                                stampedFilePath = data.trim();
+                                saveButton.classList.add('active');
+                                saveButton.style.backgroundColor = "green";
+                                saveButton.style.color = "white";
+                            } else {
+                                console.error('Unexpected response:', data);
+                                alert("Error: Could not sign the PDF. Please try again.");
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
                 } else {
-                    console.error('Unexpected response:', data);
-                    alert("Error: Could not sign the PDF. Please try again.");
+                    alert('Please mark the certificate as compliant or non-compliant before signing.');
                 }
-            })
-            .catch(error => console.error('Error:', error));
-    } else {
-        alert('Please mark the certificate as compliant or non-compliant before signing.');
-    }
-});
+            });
 
             cancelButton.addEventListener('click', function (event) {
                 signaturePad.clear();
-                saveButton.classList.remove('active'); // Reset the button color
+                saveButton.classList.remove('active');
             });
         });
     </script>
