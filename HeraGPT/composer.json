@@ -13,5 +13,8 @@
         "fpdf/fpdf": "^1.86",
         "setasign/fpdf": "^1.8",
         "phpoffice/phpspreadsheet": "^2.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.3"
     }
 }

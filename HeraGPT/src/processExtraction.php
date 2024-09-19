@@ -131,17 +131,17 @@ if (isset($_GET['pdf'])) {
     $pdfContent = extractTextFromPDF($pdfPath);
 
     // Check if content was extracted successfully
-    if (!$pdfContent) {
-        echo "Failed to extract text from the certificate PDF.";
-        exit;
-    }
+    // if (!$pdfContent) {
+    //     echo "Failed to extract text from the certificate PDF.";
+    //     exit;
+    // }
 
     // Identify the mentioned standard
     preg_match('/AS\s*\/?\s*NZS\s*\d{4}/', $pdfContent, $matches);
-    if (!isset($matches[0])) {
-        echo "No standard mentioned in the certificate.";
-        exit;
-    }
+    // if (!isset($matches[0])) {
+    //     echo "No standard mentioned in the certificate.";
+    //     exit;
+    // }
     $standardName = $matches[0];
 
     // Read and extract text from the specific standard file
