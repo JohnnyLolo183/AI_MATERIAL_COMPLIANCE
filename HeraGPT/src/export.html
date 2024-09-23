@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -49,16 +50,41 @@
             right: 10px;
             width: calc(100% - 20px);
         }
-        
-        .chat-messages div {
-    margin-bottom: 10px; /* Add space between messages */
-    padding: 5px 0;
-    border-bottom: 1px solid #02ade6; /* Optional: adds a subtle line between messages */
-}
 
-.chat-messages div:last-child {
-    border-bottom: none; /* Remove bottom border for the last message */
-}
+        .chat-messages div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            /* Add space between messages */
+            padding: 5px 0;
+            border-bottom: 1px solid #02ade6;
+            /* Optional: adds a subtle line between messages */
+        }
+
+        .chat-messages div:last-child {
+            border-bottom: none;
+            /* Remove bottom border for the last message */
+        }
+
+        .message-text {
+            flex-grow: 1;
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            background-color: #02ade6;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            margin-left: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: #0285b8;
+        }
 
         .left-side {
             width: 20%;
@@ -126,7 +152,8 @@
             color: white;
         }
 
-        .sig_button:hover, .home-btn:hover {
+        .sig_button:hover,
+        .home-btn:hover {
             background-color: #02ade6;
         }
 
@@ -168,20 +195,24 @@
 
         /* Chatbox styling */
         .chat-container {
-            width: 60%; /* Made it wider to expand left */
-            margin-right: 4%; /* Moved it a bit towards the left */
+            width: 60%;
+            /* Made it wider to expand left */
+            margin-right: 4%;
+            /* Moved it a bit towards the left */
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             background-color: #f4f4f4;
-            height: 92.5%; /* Taller */
+            height: 92.5%;
+            /* Taller */
             position: relative;
         }
 
         .chat-messages {
             width: 90%;
-            height: 73%; /* Adjusted to fit within the chat container */
+            height: 73%;
+            /* Adjusted to fit within the chat container */
             overflow-y: auto;
             padding: 10px;
             background-color: white;
@@ -217,13 +248,15 @@
         }
     </style>
 </head>
+
 <body class="new-page">
     <div class="container">
         <div class="left-side">
             <img src="../images/HERA2.png" alt="HERA Logo" class="logo-left">
             <div class="button-container">
                 <button id="compliantBtn" class="status-btn compliant" data-type="compliant">Compliant</button>
-                <button id="nonCompliantBtn" class="status-btn non-compliant" data-type="noncompliant">Non-Compliant</button>
+                <button id="nonCompliantBtn" class="status-btn non-compliant"
+                    data-type="noncompliant">Non-Compliant</button>
                 <button id="exportBtn" class="action-btn">Export</button>
             </div>
             <!-- Signature function-->
@@ -257,7 +290,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const urlParams = new URLSearchParams(window.location.search);
             const pdfUrl = urlParams.get('pdf');
             const result = urlParams.get('result');
@@ -288,7 +321,7 @@
             document.getElementById('sendChatBtn').addEventListener('click', function () {
                 const userMessage = document.getElementById('chatInput').value;
                 if (userMessage.trim() !== "") {
-                    appendMessage("You: " + userMessage);
+                    appendMessage("You: " + userMessage, false);
                     document.getElementById('chatInput').value = "";
 
                     // Send the message to the server
@@ -299,23 +332,70 @@
                         },
                         body: JSON.stringify({ message: userMessage })
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        appendMessage("AI: " + data.response);
-                    })
-                    .catch(error => {
-                        appendMessage("Error: Could not communicate with the AI.");
-                        console.error('Error:', error);
-                    });
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.response) {
+                                appendMessage("AI: " + data.response, true);
+                            } else {
+                                appendMessage("Error: Unexpected response from AI.", true);
+                            }
+                        })
+                        .catch(error => {
+                            appendMessage("Error: Could not communicate with the AI.", true);
+                            console.error('Error:', error);
+                        });
                 }
             });
 
-            function appendMessage(message) {
+            function appendMessage(message, isAIResponse) {
                 const chatMessages = document.getElementById('chatMessages');
                 const messageElement = document.createElement('div');
-                messageElement.textContent = message;
+
+                // Create a container for the message text and the copy button
+                const messageContainer = document.createElement('div');
+                messageContainer.style.display = 'flex';
+                messageContainer.style.flexDirection = 'column'; // Stack items vertically
+                messageContainer.style.alignItems = 'flex-start'; // Align message to the left
+
+                // Create a span for the message text
+                const messageText = document.createElement('span');
+                messageText.textContent = message;
+                messageText.className = 'message-text';
+                messageText.style.width = '100%'; // Full width for the message text
+
+                // Append the message text to the message container
+                messageContainer.appendChild(messageText);
+
+                // Only add a copy button if it's an AI response
+                if (isAIResponse) {
+                    const copyButton = document.createElement('button');
+                    copyButton.textContent = 'Copy';
+                    copyButton.className = 'copy-btn';
+                    copyButton.style.alignSelf = 'flex-end'; // Align button to the right
+                    copyButton.style.marginTop = '5px'; // Add space above the button
+                    copyButton.addEventListener('click', () => copyToClipboard(message));
+
+                    // Append the copy button to the message container below the message text
+                    messageContainer.appendChild(copyButton);
+                }
+
+                // Append the message container to the message element
+                messageElement.appendChild(messageContainer);
+
+                // Append the message element to the chat
                 chatMessages.appendChild(messageElement);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+
+            function copyToClipboard(text) {
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        alert('Message copied to clipboard!');
+                    })
+                    .catch(err => {
+                        console.error('Could not copy text: ', err);
+                    });
             }
 
             function markStamp(type) {
@@ -334,15 +414,15 @@
                     .catch(error => console.error('Error:', error));
             }
 
-            compliantBtn.addEventListener('click', function() {
+            compliantBtn.addEventListener('click', function () {
                 markStamp('compliant');
             });
 
-            nonCompliantBtn.addEventListener('click', function() {
+            nonCompliantBtn.addEventListener('click', function () {
                 markStamp('noncompliant');
             });
 
-            exportBtn.addEventListener('click', function() {
+            exportBtn.addEventListener('click', function () {
                 const commentText = document.getElementById('commentsBox').value;
                 if (stampedFilePath) {
                     fetch(`stamp_pdf.php?pdf=${encodeURIComponent(stampedFilePath)}&comment=${encodeURIComponent(commentText)}`)
@@ -405,4 +485,5 @@
         });
     </script>
 </body>
+
 </html>
