@@ -246,6 +246,18 @@
         .send-btn:hover {
             background-color: #02ade6;
         }
+
+        .disclaimer-message {
+            font-size: 12px;
+            color: #ff0000;
+            /* Red color to indicate caution */
+            margin-top: 5px;
+            /* Space above the disclaimer */
+            text-align: center;
+            /* Center the text */
+            padding: 5px;
+            /* Add some padding */
+        }
     </style>
 </head>
 
@@ -284,6 +296,10 @@
                     <div id="chatMessages" class="chat-messages"></div>
                     <textarea id="chatInput" class="chat-input" placeholder="Type your message..."></textarea>
                     <button id="sendChatBtn" class="send-btn">Send</button>
+                    <!-- Disclaimer message -->
+                    <div class="disclaimer-message">
+                        HeraGPT can make mistakes. Check important info.
+                    </div>
                 </div>
             </div>
         </div>
