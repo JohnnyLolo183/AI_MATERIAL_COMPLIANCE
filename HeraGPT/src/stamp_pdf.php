@@ -1,30 +1,6 @@
 <?php
 require '../vendor/autoload.php';
-use setasign\Fpdi\Fpdi;
-
-class stamp_pdf extends Fpdi {}
-
-// Function to digitally sign the PDF
-function signPDF($pdfContent, $privateKeyPath) {
-    $pdfHash = hash('sha256', $pdfContent);
-
-    if (!file_exists($privateKeyPath)) {
-        throw new Exception("Error: Private key file not found at: " . $privateKeyPath);
-    }
-
-    $privateKey = openssl_pkey_get_private(file_get_contents($privateKeyPath));
-
-    if (!$privateKey) {
-        throw new Exception("Error: Could not load private key from: " . $privateKeyPath);
-    }
-
-    $signature = '';
-    if (!openssl_sign($pdfHash, $signature, $privateKey, OPENSSL_ALGO_SHA256)) {
-        throw new Exception("Error: Could not sign the PDF content using OpenSSL.");
-    }
-
-    return base64_encode($signature);
-}
+require_once('../vendor/tecnickcom/tcpdf/tcpdf.php');
 
 // Function to set metadata
 function setPDFMetadata($pdf, $metadata) {
@@ -42,136 +18,146 @@ function setPDFMetadata($pdf, $metadata) {
     }
 }
 
-// Function to stamp the PDF as compliant or noncompliant
-// Function to stamp the PDF as compliant or noncompliant
-function stampPDF($filePath, $stampType, $comment = null, $metadata = null) {
-    $pdf = new stamp_pdf();
+function signPDFWithDigitalSignature($filePath, $certPath, $privateKeyPath, $password, $metadata = null, $signatureData = null) {
+    $pdf = new \setasign\Fpdi\TcpdfFpdi();
 
-    if (!file_exists($filePath)) {
-        throw new Exception("Error: PDF file not found at: " . $filePath);
+    // Check paths and permissions
+    if (!file_exists($certPath)) {
+        die("Error: Certificate file not found at $certPath.");
+    }
+    if (!file_exists($privateKeyPath)) {
+        die("Error: Private key file not found at $privateKeyPath.");
     }
 
+    // Import the existing PDF file using FPDI
     $pageCount = $pdf->setSourceFile($filePath);
-    $applyStamp = $stampType !== null;
+    for ($i = 1; $i <= $pageCount; $i++) {
+        $tplIdx = $pdf->importPage($i);
+        $size = $pdf->getTemplateSize($tplIdx);
+        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $pdf->useTemplate($tplIdx);
+    }
 
-    // Set metadata if provided
+    // Apply signature image at bottom-right corner on the last page (no new page)
+    if ($signatureData) {
+        $signatureData = str_replace('data:image/png;base64,', '', $signatureData);
+        $signatureImage = base64_decode($signatureData);
+        $signaturePath = 'uploads/temp_signature.png';
+
+        if (!file_put_contents($signaturePath, $signatureImage)) {
+            die("Error: Signature image could not be saved.");
+        }
+
+        if (!file_exists($signaturePath)) {
+            die("Error: Signature image file not found.");
+        }
+
+        // Apply signature to the last page only
+        $xPos = $size['width'] - 60;  // Adjust to fit within the right margin
+        $yPos = $size['height'] - 40; // Adjust to fit just above the bottom margin
+        $pdf->Image($signaturePath, $xPos, $yPos, 50, 30);  // Adjust size as necessary
+    }
+
+    // Apply metadata if present
     if ($metadata) {
         setPDFMetadata($pdf, $metadata);
     }
 
-    if ($applyStamp) {
-        $stampImagePath = ($stampType == 'compliant') ? '../images/compliant.png' : '../images/noncompliant.png';
-        if (!file_exists($stampImagePath) || mime_content_type($stampImagePath) !== 'image/png') {
-            throw new Exception('Invalid PNG file: ' . $stampImagePath);
-        }
+    // Set document signature information (TCPDF features)
+    $info = [
+        'Name' => 'Hera',  // Signer's name
+        'Location' => 'Company Name',
+        'Reason' => 'Document Verification',
+        'ContactInfo' => 'contact@company.com'
+    ];
+
+    // Set signature appearance (position - bottom-right on the last page)
+    $pdf->setSignatureAppearance($size['width'] - 60, $size['height'] - 40, 50, 30);  // Adjust coordinates
+
+    try {
+        $pdf->setSignature("file://" . realpath($certPath), "file://" . realpath($privateKeyPath), $password, '', 2, $info);
+    } catch (Exception $e) {
+        die("Error applying signature: " . $e->getMessage());
     }
 
-    // Step 1: Create the stamped PDF file
+    // Output signed PDF with modified filename
+    $fileInfo = pathinfo($filePath);
+    $newFilename = 'signed_' . $fileInfo['filename'] . '.' . $fileInfo['extension'];
+    $outputPath = dirname($filePath) . '/' . $newFilename;
+
+    $pdf->Output($outputPath, 'F');
+
+    return $outputPath; // Return the correct signed PDF path only
+}
+
+
+function stampPDF($filePath, $stampType, $comment = null, $metadata = null) {
+    $pdf = new \setasign\Fpdi\TcpdfFpdi();
+
+    // Import the existing PDF file
+    $pageCount = $pdf->setSourceFile($filePath);
+
     for ($i = 1; $i <= $pageCount; $i++) {
-        $templateId = $pdf->importPage($i);
-        $size = $pdf->getTemplateSize($templateId);
+        $tplIdx = $pdf->importPage($i);
+        $size = $pdf->getTemplateSize($tplIdx);
+        $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+        $pdf->useTemplate($tplIdx);
 
-        $pdf->addPage($size['orientation'], [$size['width'], $size['height']]);
-        $pdf->useTemplate($templateId);
+        // Apply stamp image based on compliance on the last page
+        if ($stampType && $i === $pageCount) {
+            $stampImagePath = ($stampType == 'noncompliant') ? '../images/noncompliant.png' : '../images/compliant.png';
+            if (!file_exists($stampImagePath)) {
+                throw new Exception('Error: Stamp image not found at: ' . $stampImagePath);
+            }
 
-        if ($applyStamp) {
-            $stampWidth = $size['width'] / 4; // Smaller size
-            $stampHeight = $size['height'] / 4; // Maintain aspect ratio
-            $x = ($size['width'] - $stampWidth) / 2;
-            $y = ($size['height'] - $stampHeight) / 2;
-            $pdf->Image($stampImagePath, $x, $y, $stampWidth, $stampHeight);
+            // Calculate center of the last page
+            $centerX = ($size['width'] - 60) / 2;  // Adjust for stamp width
+            $centerY = ($size['height'] - 60) / 2;  // Adjust for stamp height
+            $pdf->Image($stampImagePath, $centerX, $centerY, 60, 60);  // Adjust size as needed
         }
     }
 
+    // Add comment if present (on a new page)
     if ($comment) {
         $pdf->AddPage();
-        $pdf->SetFont('Arial', '', 12);
+        $pdf->SetFont('helvetica', '', 12);
         $pdf->MultiCell(0, 10, $comment);
     }
 
-    // Check if the file already has a `signed_`, `compliant_`, or `noncompliant_` prefix
-    $fileName = basename($filePath);
-    if (strpos($fileName, 'signed_') === false && strpos($fileName, 'compliant_') === false && strpos($fileName, 'noncompliant_') === false) {
-        // If no prefix exists, add one based on the `stampType`
-        $prefix = ($stampType == 'compliant') ? 'compliant_' : 'noncompliant_';
-        $fileName = $prefix . $fileName;
+    // Output stamped PDF with modified filename
+    $outputPath = $filePath; // Initialize outputPath
+    $fileInfo = pathinfo($filePath);
+    if (!strpos($fileInfo['filename'], '_compliant') && !strpos($fileInfo['filename'], '_noncompliant')) {
+        $newFilename = $fileInfo['filename'] . '_' . (($metadata['keywords'] == 'noncompliant') ? 'noncompliant' : 'compliant') . '.' . $fileInfo['extension'];
+        $outputPath = dirname($filePath) . '/' . $newFilename;
     }
 
-    $outputPath = 'uploads/' . $fileName;
-    $pdf->Output($outputPath, 'F'); // Save to the uploads folder
+    // Save the stamped PDF
+    $pdf->Output($outputPath, 'F');
 
     return $outputPath;
 }
 
 
-// Function to add the signature to the stamped PDF
-function addSignatureToPDF($filePath, $signatureData, $metadata = null) {
-    $pdf = new stamp_pdf();
-    $pageCount = $pdf->setSourceFile($filePath);
-
-    // Set metadata if provided
-    if ($metadata) {
-        setPDFMetadata($pdf, $metadata);
-    }
-
-    for ($i = 1; $i <= $pageCount; $i++) {
-        $templateId = $pdf->importPage($i);
-        $size = $pdf->getTemplateSize($templateId);
-
-        $pdf->addPage($size['orientation'], [$size['width'], $size['height']]);
-        $pdf->useTemplate($templateId);
-    }
-
-    if ($signatureData) {
-        $signatureFilePath = 'uploads/signature.png';
-        $signatureData = str_replace('data:image/png;base64,', '', $signatureData);
-        $signatureData = str_replace(' ', '+', $signatureData);
-        $signatureImageData = base64_decode($signatureData);
-
-        file_put_contents($signatureFilePath, $signatureImageData);
-
-        // Adjust the size and position of the signature
-        $sigWidth = $size['width'] / 6;
-        $sigHeight = $sigWidth * 0.5;
-        $sigX = $size['width'] - $sigWidth - 10;
-        $sigY = $size['height'] - $sigHeight - 10;
-        $pdf->Image($signatureFilePath, $sigX, $sigY, $sigWidth, $sigHeight);
-
-        unlink($signatureFilePath); // Clean up temporary signature image
-    }
-
-    // Ensure the correct prefix is maintained and only add `signed_`
-    $signedFilePath = 'signed_' . basename($filePath);
-
-    // Save the signed PDF with the correct file name
-    $signedOutputPath = 'uploads/' . $signedFilePath;
-    $pdf->Output($signedOutputPath, 'F');
-
-    return $signedOutputPath;
-}
 
 // Handle request for stamping and signing PDF
 if (isset($_GET['pdf'])) {
     $filePath = urldecode($_GET['pdf']);
     $stampType = isset($_GET['type']) ? $_GET['type'] : null;
-    $signatureData = isset($_GET['signature']) ? $_GET['signature'] : null;
     $isSigned = isset($_GET['signed']) && $_GET['signed'] === 'true';
     $comment = isset($_GET['comment']) ? $_GET['comment'] : null;
+    $signatureData = isset($_GET['signature']) ? $_GET['signature'] : null;
 
-    // Correctly preserve the compliance status for keywords
-if (strpos($filePath, 'noncompliant_') !== false) {
-    $complianceStatus = 'noncompliant';
-} else {
-    // If 'noncompliant_' is not found, assume 'compliant'
-    $complianceStatus = 'compliant';
-}
+    if (!$filePath || !file_exists($filePath)) {
+        die("Error: PDF file not found at $filePath");
+    }
 
     // Set metadata dynamically based on compliance status
     $metadata = [
         'title' => 'Signed Steel Certificate',
         'author' => 'Hera',
         'subject' => 'Steel Compliance Check',
-        'keywords' => $complianceStatus
+        'keywords' => ($stampType == 'noncompliant') ? 'noncompliant' : 'compliant'
     ];
 
     try {
@@ -179,9 +165,25 @@ if (strpos($filePath, 'noncompliant_') !== false) {
             // Step 1: Stamp the PDF as compliant or non-compliant
             $outputPath = stampPDF($filePath, $stampType, $comment, $metadata);
         } else {
-            // Step 2: Add signature to the stamped PDF
-            $outputPath = addSignatureToPDF($filePath, $signatureData, $metadata);
+            // Step 2: Sign the PDF with a digital signature
+            $certPath = realpath('../certificate.pem');  // Use realpath for absolute path
+            $privateKeyPath = realpath('../private-key.pem');  // Use realpath for absolute path
+
+            if (!file_exists($certPath)) {
+                die("Error: Certificate file not found at $certPath");
+            }
+            if (!file_exists($privateKeyPath)) {
+                die("Error: Private key file not found at $privateKeyPath");
+            }
+
+            $outputPath = signPDFWithDigitalSignature($filePath, $certPath, $privateKeyPath, 'your_password', $metadata, $signatureData);
         }
+
+        if (!$outputPath || !file_exists($outputPath)) {
+            die("Error: Output file not created at $outputPath");
+        }
+
+
         echo $outputPath;
     } catch (Exception $e) {
         echo 'Error: ' . $e->getMessage();

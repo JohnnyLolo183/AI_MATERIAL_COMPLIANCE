@@ -7691,6 +7691,13 @@ class TCPDF {
 			fclose($f);
 			// get digital signature via openssl library
 			$tempsign = TCPDF_STATIC::getObjFilename('sig', $this->file_id);
+			if (empty($this->signature_data['privkey'])) {
+				die("Private key is not loaded.");
+			}
+			if (empty($this->signature_data['signcert'])) {
+				die("Certificate is not loaded.");
+			}
+			
 			if (empty($this->signature_data['extracerts'])) {
 				openssl_pkcs7_sign($tempdoc, $tempsign, $this->signature_data['signcert'], array($this->signature_data['privkey'], $this->signature_data['password']), array(), PKCS7_BINARY | PKCS7_DETACHED);
 			} else {

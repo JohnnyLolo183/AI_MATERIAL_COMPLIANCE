@@ -1803,13 +1803,14 @@ class TCPDF_STATIC {
 	 * @public static
 	 */
 	public static function fopenLocal($filename, $mode) {
-		if (strpos($filename, '://') === false) {
-			$filename = 'file://'.$filename;
-		} elseif (stream_is_local($filename) !== true) {
-			return false;
+		// Remove file:// wrapping for local files
+		if (strpos($filename, 'file://') === 0) {
+			$filename = str_replace('file://', '', $filename);
 		}
+		// Attempt to open local files without the file:// protocol
 		return fopen($filename, $mode);
 	}
+	
 
 	/**
 	 * Check if the URL exist.
