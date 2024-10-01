@@ -51,7 +51,7 @@ function callOpenAI($certificateContent, $standardContent, $certificateFileName,
         $initialPrompt = "Analyze the uploaded steel certificate and NZ Standard file. 
         Only mention the uploaded file names and whether the certificate complies with the standard as shown:
         'Result: (Compliant/Non-Compliant) Certificate $certificateFileName 'complies/does not comply' with $standardFileName.' 
-        Briefly provide evidence on reason for result if non compliant.
+        Briefly provide evidence on reason for result ONLY if non compliant. Keep further responses short.
         \nCertificate File Name: $certificateFileName
         \nCertificate Content: $certificateContent
         \nStandard File Name: $standardFileName

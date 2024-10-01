@@ -66,14 +66,16 @@ function signPDFWithDigitalSignature($filePath, $certPath, $privateKeyPath, $pas
     // Set document signature information (TCPDF features)
     $info = [
         'Name' => 'Hera',  // Signer's name
-        'Location' => 'Company Name',
+        'Location' => 'NZ',
         'Reason' => 'Document Verification',
-        'ContactInfo' => 'contact@company.com'
+        'ContactInfo' => 'Info@hera.org.nz'
     ];
 
     // Set signature appearance (position - bottom-right on the last page)
     $pdf->setSignatureAppearance($size['width'] - 60, $size['height'] - 40, 50, 30);  // Adjust coordinates
 
+    // **Important: Move metadata setting after signature application**
+    // This ensures the metadata is embedded within the signed PDF
     try {
         $pdf->setSignature("file://" . realpath($certPath), "file://" . realpath($privateKeyPath), $password, '', 2, $info);
     } catch (Exception $e) {
@@ -121,7 +123,7 @@ function stampPDF($filePath, $stampType, $comment = null, $metadata = null) {
     if ($comment) {
         $pdf->AddPage();
         $pdf->SetFont('helvetica', '', 12);
-        $pdf->MultiCell(0, 10, $comment);
+        $pdf->MultiCell(150, 10, $comment, 0, 'L');
     }
 
     // Output stamped PDF with modified filename
