@@ -110,8 +110,17 @@ function callOpenAI($certificateContent, $standardContent, $certificateFileName,
 // Function to extract text from PDF using pdftotext
 function extractTextFromPDF($pdfPath, $maxLength = 5000)
 {
-    $outputFile = tempnam(sys_get_temp_dir(), 'pdftotext');
-    shell_exec("pdftotext -q -nopgbrk -enc UTF-8 '$pdfPath' '$outputFile'");
+      // Escape the PDF path for compatibility on Windows
+      $pdfPath = escapeshellarg($pdfPath);
+      // Create the temporary file in a controlled directory
+    $outputFile = tempnam('C:/path/to/tempdir', 'pdftotext');
+    $output = shell_exec("pdftotext -q -nopgbrk -enc UTF-8 $pdfPath $outputFile 2>&1");
+    if (!file_exists($outputFile) || filesize($outputFile) === 0) {
+        // If pdftotext failed, output the error message for debugging
+        echo 'pdftotext error: ' . $output;
+        exit;
+    }
+
     $text = file_get_contents($outputFile);
     unlink($outputFile);
     return substr($text, 0, $maxLength);
