@@ -57,16 +57,16 @@ Dependencies Overview
 
 Node.js Packages (installed via npm install):
 
-@google/generative-ai (^0.17.0): For chatbot functionality.
-signature_pad (^5.0.2): Allows digital signatures on certificates.
+- @google/generative-ai (^0.17.0): For chatbot functionality.
+- signature_pad (^5.0.2): Allows digital signatures on certificates.
 
 PHP Packages (installed via composer install):
 
-setasign/fpdi (^2.6): Enables PDF manipulation for compliance marking.
-fpdf/fpdf (^1.86): Core PDF handling library.
-setasign/fpdf (^1.8): Additional FPDF handling support.
-phpoffice/phpspreadsheet (^2.2): Enables spreadsheet compatibility.
-tecnickcom/tcpdf (^6.7): Assists with PDF generation for exports.
+- setasign/fpdi (^2.6): Enables PDF manipulation for compliance marking.
+- fpdf/fpdf (^1.86): Core PDF handling library.
+- setasign/fpdf (^1.8): Additional FPDF handling support.
+- phpoffice/phpspreadsheet (^2.2): Enables spreadsheet compatibility.
+- tecnickcom/tcpdf (^6.7): Assists with PDF generation for exports.
 
 Usage Instructions
 
