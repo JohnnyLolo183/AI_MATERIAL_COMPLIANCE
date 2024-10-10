@@ -2,7 +2,7 @@
 require '../vendor/autoload.php';
 require_once('../vendor/tecnickcom/tcpdf/tcpdf.php');
 
-// Function to set metadata
+// Set metadata function
 function setPDFMetadata($pdf, $metadata) {
     if (isset($metadata['title'])) {
         $pdf->SetTitle($metadata['title']);
@@ -18,10 +18,11 @@ function setPDFMetadata($pdf, $metadata) {
     }
 }
 
+// Function to sign PDF with digital signature
 function signPDFWithDigitalSignature($filePath, $certPath, $privateKeyPath, $password, $metadata = null, $signatureData = null) {
     $pdf = new \setasign\Fpdi\TcpdfFpdi();
 
-    // Check paths and permissions
+    // Validate certificate and key paths
     if (!file_exists($certPath)) {
         die("Error: Certificate file not found at $certPath.");
     }
@@ -29,7 +30,7 @@ function signPDFWithDigitalSignature($filePath, $certPath, $privateKeyPath, $pas
         die("Error: Private key file not found at $privateKeyPath.");
     }
 
-    // Import the existing PDF file using FPDI
+    // Import the existing PDF file
     $pageCount = $pdf->setSourceFile($filePath);
     for ($i = 1; $i <= $pageCount; $i++) {
         $tplIdx = $pdf->importPage($i);
@@ -38,7 +39,7 @@ function signPDFWithDigitalSignature($filePath, $certPath, $privateKeyPath, $pas
         $pdf->useTemplate($tplIdx);
     }
 
-    // Apply signature image at bottom-right corner on the last page (no new page)
+    // Apply signature if data exists
     if ($signatureData) {
         $signatureData = str_replace('data:image/png;base64,', '', $signatureData);
         $signatureImage = base64_decode($signatureData);
@@ -48,48 +49,47 @@ function signPDFWithDigitalSignature($filePath, $certPath, $privateKeyPath, $pas
             die("Error: Signature image could not be saved.");
         }
 
-        if (!file_exists($signaturePath)) {
-            die("Error: Signature image file not found.");
-        }
-
-        // Apply signature to the last page only
-        $xPos = $size['width'] - 60;  // Adjust to fit within the right margin
-        $yPos = $size['height'] - 40; // Adjust to fit just above the bottom margin
-        $pdf->Image($signaturePath, $xPos, $yPos, 50, 30);  // Adjust size as necessary
+        $xPos = $size['width'] - 60;
+        $yPos = $size['height'] - 40;
+        $pdf->Image($signaturePath, $xPos, $yPos, 50, 30);
+        unlink($signaturePath); // Clean up temporary file
     }
 
-    // Apply metadata if present
+    // Set metadata if provided
     if ($metadata) {
         setPDFMetadata($pdf, $metadata);
     }
 
-    // Set document signature information (TCPDF features)
+    // Apply digital signature
     $info = [
-        'Name' => 'Hera',  // Signer's name
+        'Name' => 'Hera',
         'Location' => 'NZ',
         'Reason' => 'Document Verification',
         'ContactInfo' => 'Info@hera.org.nz'
     ];
 
-    // Set signature appearance (position - bottom-right on the last page)
-    $pdf->setSignatureAppearance($size['width'] - 60, $size['height'] - 40, 50, 30);  // Adjust coordinates
+    // Add signature appearance
+    $pdf->setSignatureAppearance($size['width'] - 60, $size['height'] - 40, 50, 30);
 
-    // **Important: Move metadata setting after signature application**
-    // This ensures the metadata is embedded within the signed PDF
     try {
         $pdf->setSignature("file://" . realpath($certPath), "file://" . realpath($privateKeyPath), $password, '', 2, $info);
     } catch (Exception $e) {
         die("Error applying signature: " . $e->getMessage());
     }
 
-    // Output signed PDF with modified filename
+    // Save signed PDF
     $fileInfo = pathinfo($filePath);
     $newFilename = 'signed_' . $fileInfo['filename'] . '.' . $fileInfo['extension'];
     $outputPath = dirname($filePath) . '/' . $newFilename;
 
+    if ($metadata) {
+        setPDFMetadata($pdf, $metadata);
+    }
+    
+    // After setting metadata, save the file
     $pdf->Output($outputPath, 'F');
 
-    return $outputPath; // Return the correct signed PDF path only
+    return $outputPath;
 }
 
 
@@ -134,7 +134,11 @@ function stampPDF($filePath, $stampType, $comment = null, $metadata = null) {
         $outputPath = dirname($filePath) . '/' . $newFilename;
     }
 
-    // Save the stamped PDF
+    if ($metadata) {
+        setPDFMetadata($pdf, $metadata);
+    }
+    
+    // After setting metadata, save the file
     $pdf->Output($outputPath, 'F');
 
     return $outputPath;
