@@ -135,11 +135,11 @@ function stampPDF($filePath, $stampType, $comment = null, $metadata = null) {
     }
 
     if ($metadata) {
-        setPDFMetadata($pdf, $metadata);
-    }
-    
-    // After setting metadata, save the file
-    $pdf->Output($outputPath, 'F');
+    setPDFMetadata($pdf, $metadata);
+}
+
+// After setting metadata, save the file
+$pdf->Output($outputPath, 'F');
 
     return $outputPath;
 }
